@@ -1,0 +1,36 @@
+Hinweise zum Loader
+===================
+
+
+1) Starten des Loaders
+======================
+
+bin/loader [-d] VERZEICHNIS
+
+-d: 		Wenn angegeben, dann schreibt der Loader zusätzliche
+		Debug-Ausgaben auf die Standardfehlerausgabe
+
+VERZEICHNIS:	Das Verzeichnis, das der Loader nach Fragekatalogen
+		durchsuchen soll
+
+
+2) Warnungen beim Kompilieren
+=============================
+
+Manche Kompiler erzeugen Warnungen ähnlich der folgenden:
+	loader/browse.c:57: Warnung: Der Rückgabewert von »write«, der mit dem Attribut warn_unused_result deklariert wurde, wird ignoriert
+Diese können für den Loader ignoriert werden. Falls die Pipe für die
+Standardausgabe unerwartet geschlossen wird, erhält der Loader das Signal
+SIGPIPE und bricht ohnehin ab.
+
+
+3) Shared Memory
+================
+
+Der Loader benutzt POSIX Shared Memory. Somit müssen Sie auch die neue API
+dafür im Server verwenden.  Erklärungen zur Verwendung der Funktionen shm_open,
+shm_close, mmap, munmap, ftruncate, shm_unlink finden Sie in Moodle unter:
+	https://www.elearning.hs-weingarten.de/mod/lesson/view.php?id=5360
+
+In der Datei common/server_loader_protocol.h gibt es ein Makro SHMEM_NAME, das den Namen
+des Shared Memorys definiert. Bitte passen Sie den Namen für Ihre Projektgruppe an!
