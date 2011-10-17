@@ -1,0 +1,80 @@
+Ein Thread soll auf ein durch einen anderen Thread ausgelöstes Ereignis warten. Welcher Mechanismus ist geeignet?
+TIMEOUT: 30
++ nur Semaphore
+- nur Mutex
+- weder Semaphore noch Mutexe
+- sowohl Semaphore als auch Mutexe
+
+Der Systemaufruf fork...
+TIMEOUT: 20
++ ...erzeugt einen neuen Prozess, der das gleiche Programm ausführt.
+- ...erzeugt einen neuen Prozess, der ein anderes Programm ausführt.
+- ...erzeugt einen neuen Thread.
+- ...ist das logische Gegenstück zum Aufruf knife.
+
+In einem Signalhandler...
+TIMEOUT: 30
++ ...dürfen nur bestimmte Funktionen aufgerufen werden.
+- ...kann man problemlos alles machen, was man auch im regulären Programmcode macht.
+- ...dürfen keine Fließkommaoperationen durchgeführt werden.
+- ...ist nur der Systemaufruf write verboten.
+
+Sie möchten eine Datenstruktur vor gleichzeitigem Zugriff aus mehreren Threads schützen. Welcher Mechanismus ist dafür geeignet?
+TIMEOUT: 30
++ sowohl Semaphore als auch Mutexe
+- nur Semaphore
+- nur Mutexe
+- nur Signale
+
+Es soll darauf gewartet werden, dass Daten eintreffen, allerdings nur eine bestimmte Zeit. Wie kann man das umsetzen?
+TIMEOUT: 30
++ mit dem Systemaufruf select
+- durch einen zusätzlichen Timeout-Parameter bei read oder recv
+- gar nicht
+- durch Setzen des Timeout-Status mit fcntl
+
+Mit welchem Systemaufruf kann man den Port festlegen, auf dem ein Serverprogramm auf Verbindungen wartet?
++ bind
+- accept
+- setsock
+- open
+
+Während eines read-Aufrufs tritt ein Signal auf und wird durch einen Signalhandler abgearbeitet (SA_RESTART nicht gesetzt). Was passiert?
+TIMEOUT: 45
++ Der Aufruf kehrt unter Umständen mit weniger Daten als angefordert oder EINTR zurück.
+- Es werden auf jeden Fall so viele Daten gelesen wie angefordert.
+- Die Daten gehen verloren.
+- Das Programm wird in solchen Fällen vom Betriebssystem abgebrochen.
+
+Beim Lesen aus einer Pipe meldet der Aufruf read das Dateiende, wenn...
+TIMEOUT: 20
++ ...alle Schreib-Deskriptoren für die Pipe geschlossen und alle Daten aus der Pipe gelesen wurden.
+- ...der Leser ein spezielles Signal erhält.
+- ...der schreibende Prozess fork aufruft.
+- ...^D in die Pipe geschrieben wird.
+
+Was passiert mit einem Shared-Memory-Objekt, wenn es nicht manuell gelöscht wird?
+TIMEOUT: 30
++ Es bleibt weiterhin bestehen, bis es von Hand oder durch einen Reboot gelöscht wurde.
+- Es wird zerstört, wenn sich der Prozess beendet, der es erzeugt hat.
+- Es wird zerstört, wenn kein Prozess mehr auf es zugreift.
+- Der Garbage-Collector des Betriebssystems zerstört es, wenn der Speicher knapp wird.
+
+Welches dieser Signale kann nicht abgefangen werden?
++ SIGKILL
+- SIGTERM
+- SIGINT
+- SIGPIPE
+
+Was ist ein Zombie-Prozess unter Unix?
+TIMEOUT: 30
++ Ein Prozess, dessen Exit-Status noch nicht mittels wait abgefragt wurde.
+- Ein Daemon-Prozess, der durch den Aufruf zombie immun gegen das KILL-Signal gemacht wurde.
+- Ein Prozess, der nur nachts gestartet werden kann.
+- Ein Computervirus.
+
+Welches Signal (sofern nicht ignoriert) empfängt ein Elternprozess, wenn sich einer seiner Kindprozesse beendet?
++ SIGCHLD
+- SIGSYS
+- SIGSEGV
+- SIGABRT

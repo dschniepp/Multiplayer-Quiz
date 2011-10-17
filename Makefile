@@ -12,7 +12,7 @@ GTK_LIBS = `pkg-config gtk+-2.0 --libs` `pkg-config gthread-2.0 --libs`
 
 ####################################################################
 
-#
+
 # Liste der Module der Binaries
 #
 
