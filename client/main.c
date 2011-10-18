@@ -21,7 +21,7 @@
 #include <arpa/inet.h>
 #include "common/util.h"
 
-//
+
 /**
  * sock -> STDOUT
  * STDIN -> sock
