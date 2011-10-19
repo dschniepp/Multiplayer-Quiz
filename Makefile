@@ -80,12 +80,12 @@ bin/server:	$(SERVER_OBJECTS)
 	gcc -o $@ $+ -lpthread -lrt
 
 ### 32 Bit ###
-#bin/client:    $(CLIENT_OBJECTS) client/gui/libquizgui32.a
-#    gcc -o $@ $+ $(GTK_LIBS)
+bin/client:    $(CLIENT_OBJECTS) client/gui/libquizgui32.a
+	gcc -o $@ $+ $(GTK_LIBS)
     
 ### 64 Bit ###
-bin/client:    $(CLIENT_OBJECTS) client/gui/libquizgui64.a
-    gcc -o $@ $+ $(GTK_LIBS) 
+#bin/client:    $(CLIENT_OBJECTS) client/gui/libquizgui64.a
+#	gcc -o $@ $+ $(GTK_LIBS) 
 
 ####################################################################
 
