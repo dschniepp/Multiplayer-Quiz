@@ -12,7 +12,7 @@ GTK_LIBS = `pkg-config gtk+-2.0 --libs` `pkg-config gthread-2.0 --libs`
 
 ####################################################################
 
-
+#
 # Liste der Module der Binaries
 #
 
@@ -79,13 +79,15 @@ bin/loader:	$(LOADER_OBJECTS)
 bin/server:	$(SERVER_OBJECTS)
 	gcc -o $@ $+ -lpthread -lrt
 
-### 32 Bit ###
-bin/client:    $(CLIENT_OBJECTS) client/gui/libquizgui32.a
+# For 32-bit Version
+
+bin/client:	$(CLIENT_OBJECTS) client/gui/libquizgui32.a
 	gcc -o $@ $+ $(GTK_LIBS)
-    
-### 64 Bit ###
-#bin/client:    $(CLIENT_OBJECTS) client/gui/libquizgui64.a
-#	gcc -o $@ $+ $(GTK_LIBS) 
+
+# For 64-bit Version
+
+#bin/client:	$(CLIENT_OBJECTS) client/gui/libquizgui64.a
+#	gcc -o $@ $+ $(GTK_LIBS)
 
 ####################################################################
 
