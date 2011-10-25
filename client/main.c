@@ -5,7 +5,7 @@
  * Original von Sascha Hlusiak, Anpassungen an
  * das Projektgerüst von Stefan Gast
  *****************************************/
-
+//
 #define _POSIX_SOURCE 1
 
 #include <stdio.h>
