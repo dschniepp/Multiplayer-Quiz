@@ -7,7 +7,7 @@
  *****************************************/
 
 #define _POSIX_SOURCE 1
-
+/*
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +22,9 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "common/util.h"
+*/
 
+#include "common/socket.h"
 
 /**
  * struct to pass custom data to echo_thread
@@ -45,6 +47,7 @@ static void echo_loop(int fd)
 
 	while (1) {
 		ret = read(fd, buf, sizeof(buf));
+                infoPrint("official readtest :-)/n");
 		if (ret == 0) {
 			break;
 		}

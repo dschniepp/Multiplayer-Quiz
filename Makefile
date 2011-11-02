@@ -12,15 +12,15 @@ GTK_LIBS = `pkg-config gtk+-2.0 --libs` `pkg-config gthread-2.0 --libs`
 
 ####################################################################
 
-
+#
 # Liste der Module der Binaries
 #
 
 LOADER_OBJECTS = loader/main.o loader/browse.o loader/load.o loader/parser.o common/util.o
 
-SERVER_OBJECTS = server/main.o common/util.o	# Liste der Server-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
+SERVER_OBJECTS = server/main.o common/util.o common/socket.o	# Liste der Server-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
 
-CLIENT_OBJECTS = client/main.o common/util.o	# Liste der Client-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
+CLIENT_OBJECTS = client/main.o common/util.o common/socket.o	# Liste der Client-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
 
 TARGETS = bin/loader bin/server bin/client
 
@@ -79,13 +79,15 @@ bin/loader:	$(LOADER_OBJECTS)
 bin/server:	$(SERVER_OBJECTS)
 	gcc -o $@ $+ -lpthread -lrt
 
-### 32 Bit ###
-bin/client:    $(CLIENT_OBJECTS) client/gui/libquizgui32.a
+# For 32-bit Version
+
+bin/client:	$(CLIENT_OBJECTS) client/gui/libquizgui32.a
 	gcc -o $@ $+ $(GTK_LIBS)
-    
-### 64 Bit ###
-#bin/client:    $(CLIENT_OBJECTS) client/gui/libquizgui64.a
-#	gcc -o $@ $+ $(GTK_LIBS) 
+
+# For 64-bit Version
+
+#bin/client:	$(CLIENT_OBJECTS) client/gui/libquizgui64.a
+#	gcc -o $@ $+ $(GTK_LIBS)
 
 ####################################################################
 
@@ -101,9 +103,9 @@ common/util.o:	common/util.c common/util.h
 #
 # Objektdateien des Loaders
 #
-loader/main.o:		loader/main.c loader/browse.h common/util.h common/server_loader_protocol.h
+loader/main.o:		loader/main.c loader/browse.h common/util.h common/server_loader_protocol.h common/socket.h
 
-loader/browse.o:	loader/browse.c loader/browse.h common/util.h
+loader/browse.o:	loader/browse.c loader/browse.h common/util.h common/socket.h
 
 loader/load.o:		loader/load.c loader/load.h loader/parser.h common/server_loader_protocol.h common/question.h common/util.h
 
@@ -116,7 +118,7 @@ loader/parser.o:	loader/parser.c loader/parser.h common/question.h
 #
 
 # Hier Abhängigkeiten der Server-Module eintragen!
-server/main.o:		server/main.c common/util.h
+server/main.o:		server/main.c common/util.h common/socket.h
 
 #################################################################
 
@@ -125,4 +127,4 @@ server/main.o:		server/main.c common/util.h
 #
 
 # Hier Abhängigkeiten der Client-Module eintragen!
-client/main.o:		client/main.c common/util.h
+client/main.o:		client/main.c common/util.h common/socket.h

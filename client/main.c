@@ -7,7 +7,7 @@
  *****************************************/
 
 #define _POSIX_SOURCE 1
-
+/*
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +20,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "common/util.h"
+*/
 
+#include "common/socket.h"
 
 /**
  * sock -> STDOUT
