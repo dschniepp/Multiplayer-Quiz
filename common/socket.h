@@ -22,11 +22,14 @@
 
 void connect_socket_client(int *sock, char *serv_addr, char *port);
 void close_socket_client( int sock );
+void write_client(int sock, char *buf, size_t size);
+void command_thread_client(int sock);
 
 /*--------------Server Functions---------------------*/
 
 void connect_socket_server(int sockets[], int *numsockets, char *server, char *service);
 void close_socket_server( int sockets[], int numsockets );
+void accept_loop_server(int fd[], int numfd);
 
 /*
 void error_exit(char *error_message);
