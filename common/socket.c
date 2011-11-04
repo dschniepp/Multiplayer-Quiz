@@ -5,11 +5,18 @@
 
 /**----Internal Functions*/
 
+struct strread_client {
+	int socket;
+};
+
 /**Read vom Client --> als eigenen Thread starten*/
 
-void read_client(int sock)
+void* read_client(void *param)
 {
-	fd_set set;
+        struct strread_client * data;
+	data = (struct strread_client*)param;
+        int sock = data->socket;
+        fd_set set;
 	int ret;
 	static char buf[512];
 	
@@ -34,6 +41,7 @@ void read_client(int sock)
 		 * sock -> STD_OUT
 		 **/
 		if (FD_ISSET(sock, &set)) {
+                        infoPrint("I am reading now :-) :-) :-)");
 			ret = read(sock, buf, sizeof(buf));
 			if (ret == 0) {
 				break;
@@ -44,11 +52,11 @@ void read_client(int sock)
 			}
 				
 			//Do Stuff, with read information!!!
-			
-		
+
 		}
-	
-	}  
+	}
+        pthread_exit(0);
+	return NULL;
 }
 
 /**----External Functions*/
@@ -61,13 +69,12 @@ void read_client(int sock)
  * --> Prüfe sock nach dem Aufruf auf -1 !!!
  **/
  
-void connect_socket_client(int *sock, char *serv_addr, char *port){
+void connect_socket_client(int *sock, char serv_addr[], char port[]){
  
 	struct addrinfo *addr_info, *p, hints;
 	int ret;
 	/**Set the socket at the beginning to -1 and change value if connection works!*/
-	*sock = -1;
-	
+		
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -84,11 +91,11 @@ void connect_socket_client(int *sock, char *serv_addr, char *port){
 
         p = addr_info;
         while (p){
-			int s;
+			
 			char dst[INET6_ADDRSTRLEN];
 
 			/**Create socket for found family */		
-            s = socket(p->ai_family, p->ai_socktype, 0);
+            *sock = socket(p->ai_family, p->ai_socktype, 0);
 
 			/**RTFM: getnameinfo */
 			getnameinfo(p->ai_addr,
@@ -100,13 +107,13 @@ void connect_socket_client(int *sock, char *serv_addr, char *port){
 			NI_NUMERICHOST);
 
 			/**Try to connect */
-            if (connect(s, p->ai_addr, p->ai_addrlen) == 0){
-                //infoPrint("Connected");
-				*sock = s;
+                        if (connect(*sock, p->ai_addr, p->ai_addrlen) == 0){
+                                infoPrint("Connected");
+				
 			}else{
-				//errorPrint("Error, while trying %s",dst);
+				errorPrint("Error, while trying %s",dst);
 			}
-			close(s);
+			close(*sock);
 			p = p->ai_next;		
 		}		
 }
@@ -152,8 +159,11 @@ void write_client(int sock, char *buf, size_t size)
 void command_thread_client(int sock){
 
 	pthread_t thread_id;
+        struct strread_client* data;
+        data = (struct strread_client*)malloc(sizeof(struct strread_client));
+        data->socket=sock;
 	/* Background new connection */
-	if((pthread_create(&thread_id, NULL, &read_client, sock))!=0){
+	if((pthread_create(&thread_id, NULL, read_client, data))!=0){
 		errorPrint("Error while creating thread: %s", strerror(errno));
 	};
 
@@ -183,6 +193,7 @@ static void echo_loop(int fd)
 	static char buf[512];
 
 	while (1) {
+                infoPrint("I am reading now :-) :-) :-)");
 		ret = read(fd, buf, sizeof(buf));
 		if (ret == 0) {
 			break;
@@ -240,7 +251,7 @@ void* echo_thread(void* param)
 
 
 
-void connect_socket_server(int sockets[], int *numsockets, char *server, char *service){
+void connect_socket_server(int sockets[], int *numsockets, char server[], char service[]){
 
 	struct addrinfo *addr_info, *p, hints;
 	int ret;
@@ -300,7 +311,8 @@ void connect_socket_server(int sockets[], int *numsockets, char *server, char *s
 				close(s);
 			} else 	{
 				infoPrint("bind successful");
-				sockets[*numsockets++] = s;
+				sockets[*numsockets] = s;
+                                *numsockets = *numsockets + 1;
 			}
 		} else {
 			errorPrint("bind failed: %s", strerror(errno));
