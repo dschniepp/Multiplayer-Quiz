@@ -22,6 +22,8 @@
 int main(int argc, char ** argv)
 {
         int sock;
+        //char teststring[20];
+        size_t str_length;
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
 
@@ -37,7 +39,12 @@ int main(int argc, char ** argv)
         if (sock==-1){
                 errorPrint("Error while connecting to server");
         }
-
+        
+        char teststring[]="Testtext";
+        str_length=strlen(teststring);
+        
+        write_client(sock, teststring, str_length);
+        
         command_thread_client(sock);
         
         while(1){

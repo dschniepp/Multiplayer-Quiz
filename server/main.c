@@ -22,8 +22,8 @@ struct client_data {
 int main(int argc, char ** argv)
 {
 	char *server, *service;
-	struct addrinfo *addr_info, *p, hints;
-	int ret, i;
+	struct addrinfo;
+	int i;
 	int sockets[128];
 	int numsockets = 0;
 
@@ -54,6 +54,9 @@ int main(int argc, char ** argv)
         //printf("sockets[0]=%d, numsockets=%d",sockets[0], numsockets);
         accept_loop_server(sockets, numsockets);
 	
+        while(1){
+        }
+        
 	for (i=0; i<numsockets; i++) {
 		close(sockets[i]);
 	}

@@ -22,7 +22,7 @@
 
 void connect_socket_client(int *sock, char serv_addr[], char port[]);
 void close_socket_client( int sock );
-void write_client(int sock, char *buf, size_t size);
+void write_client(int sock, char buf[], size_t size);
 void command_thread_client(int sock);
 
 /*--------------Server Functions---------------------*/

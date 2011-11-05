@@ -29,6 +29,66 @@
  * STDIN -> sock
  **/
 
+void read_client(int sock)
+{
+        //struct strread_client * data;
+	//data = (struct strread_client*)param;
+        //int sock = data->socket;
+        
+        //int sock = (int)arg;
+        fd_set set;
+	int ret;
+	static char buf[512];
+	
+	while (1) {
+		int max;
+		FD_ZERO(&set);
+		FD_SET(sock, &set);
+		FD_SET(STDIN_FILENO, &set);
+		max = (sock>STDIN_FILENO)?sock:STDIN_FILENO;
+		
+                errorPrint("max: %d", max);
+                errorPrint("socket: %d", sock);
+		//struct timeval tval;
+		//tval.tv_usec = 1000;
+		//ret = select(max+1, &set, NULL, NULL, &tval);
+		
+		/* RTFM: select */
+		ret = select(max+1, &set, NULL, NULL, NULL);
+		if (ret <= 0) {
+			errorPrint("Error in select: %s", strerror(errno));
+			break;
+		}
+                
+		/**
+		 * sock -> STD_OUT
+		 **/
+                //errorPrint("Before FD_ISSET");
+		if (FD_ISSET(sock, &set)) {
+                        //errorPrint("IN FD_ISSET");
+                        infoPrint("I am reading now :-) :-) :-)");
+			ret = read(sock, buf, sizeof(buf));
+			if (ret == 0) {
+				break;
+			}
+			if (ret < 0) {
+				errorPrint("Cannot read from socket: %s", strerror(errno));
+				break;
+			}
+				
+			//Do Stuff, with read information!!!
+
+		}else{
+                    //errorPrint("FD_ISSET not true");    
+                    infoPrint("FD_ISSET is not true");
+                        
+                }
+	}
+        //pthread_exit(0);
+	//return NULL;
+}
+
+
 static void echo_loop(int sock)
 {
 	fd_set set;

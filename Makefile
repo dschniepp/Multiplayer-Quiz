@@ -82,7 +82,7 @@ bin/server:	$(SERVER_OBJECTS)
 # For 32-bit Version
 
 bin/client:	$(CLIENT_OBJECTS) client/gui/libquizgui32.a
-	gcc -o $@ $+ $(GTK_LIBS)
+	gcc -o $@ $+ $(GTK_LIBS) -lpthread -lrt
 
 # For 64-bit Version
 

@@ -13,9 +13,11 @@ struct strread_client {
 
 void* read_client(void *param)
 {
-        struct strread_client * data;
-	data = (struct strread_client*)param;
-        int sock = data->socket;
+        //struct strread_client * data;
+	//data = (struct strread_client*)param;
+        //int sock = data->socket;
+        
+        int sock = (int)param;
         fd_set set;
 	int ret;
 	static char buf[512];
@@ -27,10 +29,6 @@ void* read_client(void *param)
 		FD_SET(STDIN_FILENO, &set);
 		max = (sock>STDIN_FILENO)?sock:STDIN_FILENO;
 		
-		//struct timeval tval;
-		//tval.tv_usec = 1000;
-		//ret = select(max+1, &set, NULL, NULL, &tval);
-		
 		/* RTFM: select */
 		ret = select(max+1, &set, NULL, NULL, NULL);
 		if (ret <= 0) {
@@ -41,7 +39,6 @@ void* read_client(void *param)
 		 * sock -> STD_OUT
 		 **/
 		if (FD_ISSET(sock, &set)) {
-                        infoPrint("I am reading now :-) :-) :-)");
 			ret = read(sock, buf, sizeof(buf));
 			if (ret == 0) {
 				break;
@@ -50,14 +47,33 @@ void* read_client(void *param)
 				errorPrint("Cannot read from socket: %s", strerror(errno));
 				break;
 			}
-				
-			//Do Stuff, with read information!!!
-
+			if (write(STDOUT_FILENO, buf, ret) < ret) {
+				errorPrint("Cannot write to stdout: %s", strerror(errno));
+				break;
+			}
+		}
+		/**
+		 * STDIN -> sock
+		 **/
+		if (FD_ISSET(STDIN_FILENO, &set)) {
+			ret = read(STDIN_FILENO, buf, sizeof(buf));
+			if (ret == 0) {
+				break;
+			}
+			if (ret < 0) {
+				errorPrint("Cannot read from stdin: %s", strerror(errno));
+				break;
+			}
+			if (write(sock, buf, ret) < ret) {
+				errorPrint("Cannot write to socket: %s", strerror(errno));
+				break;
+			}
 		}
 	}
         pthread_exit(0);
 	return NULL;
 }
+
 
 /**----External Functions*/
  
@@ -95,7 +111,7 @@ void connect_socket_client(int *sock, char serv_addr[], char port[]){
 			char dst[INET6_ADDRSTRLEN];
 
 			/**Create socket for found family */		
-            *sock = socket(p->ai_family, p->ai_socktype, 0);
+                        *sock = socket(p->ai_family, p->ai_socktype, 0);
 
 			/**RTFM: getnameinfo */
 			getnameinfo(p->ai_addr,
@@ -109,13 +125,14 @@ void connect_socket_client(int *sock, char serv_addr[], char port[]){
 			/**Try to connect */
                         if (connect(*sock, p->ai_addr, p->ai_addrlen) == 0){
                                 infoPrint("Connected");
+                                break;
 				
 			}else{
 				errorPrint("Error, while trying %s",dst);
 			}
-			close(*sock);
 			p = p->ai_next;		
-		}		
+		}
+        freeaddrinfo(addr_info);
 }
 /**Function to close Clientsocket*/
 
@@ -125,7 +142,7 @@ void close_socket_client( int sock ){
 
 /**Write vom Client*/
 
-void write_client(int sock, char *buf, size_t size)
+void write_client(int sock, char buf[], size_t size)
 {
 	fd_set set;
 	int ret;
@@ -143,9 +160,9 @@ void write_client(int sock, char *buf, size_t size)
                         errorPrint("Error in select: %s", strerror(errno));
                 }
 
-                if (ret < size){
+                /*if (ret < size){
                         errorPrint("Size of data to huge: %s", strerror(errno));
-                }
+                }*/
 	
                 if (write(sock, buf, ret) < ret) {
 			errorPrint("Cannot write to socket: %s", strerror(errno));
@@ -158,12 +175,12 @@ void write_client(int sock, char *buf, size_t size)
 
 void command_thread_client(int sock){
 
-	pthread_t thread_id;
-        struct strread_client* data;
-        data = (struct strread_client*)malloc(sizeof(struct strread_client));
-        data->socket=sock;
-	/* Background new connection */
-	if((pthread_create(&thread_id, NULL, read_client, data))!=0){
+	pthread_t command_thread;
+        //struct strread_client* data;
+        //data = (struct strread_client*)malloc(sizeof(struct strread_client));
+        //data->socket=sock;
+	// Background new connection
+	if((pthread_create(&command_thread, NULL, read_client, (void*)sock))!=0){
 		errorPrint("Error while creating thread: %s", strerror(errno));
 	};
 
@@ -193,8 +210,8 @@ static void echo_loop(int fd)
 	static char buf[512];
 
 	while (1) {
-                infoPrint("I am reading now :-) :-) :-)");
 		ret = read(fd, buf, sizeof(buf));
+                infoPrint("official readtest :-)/n");
 		if (ret == 0) {
 			break;
 		}
