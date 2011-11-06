@@ -47,28 +47,12 @@ void* read_client(void *param)
 				errorPrint("Cannot read from socket: %s", strerror(errno));
 				break;
 			}
-			if (write(STDOUT_FILENO, buf, ret) < ret) {
-				errorPrint("Cannot write to stdout: %s", strerror(errno));
-				break;
-			}
+                        /*Do Stuff, after Reading!!!:-)*/
+                        errorPrint("Buffer: %s", buf);
 		}
 		/**
 		 * STDIN -> sock
 		 **/
-		if (FD_ISSET(STDIN_FILENO, &set)) {
-			ret = read(STDIN_FILENO, buf, sizeof(buf));
-			if (ret == 0) {
-				break;
-			}
-			if (ret < 0) {
-				errorPrint("Cannot read from stdin: %s", strerror(errno));
-				break;
-			}
-			if (write(sock, buf, ret) < ret) {
-				errorPrint("Cannot write to socket: %s", strerror(errno));
-				break;
-			}
-		}
 	}
         pthread_exit(0);
 	return NULL;
@@ -155,16 +139,12 @@ void write_client(int sock, char buf[], size_t size)
 		
 	/* RTFM: select */
         if (FD_ISSET(sock, &set)) {
-                ret = select(max+1, &set, NULL, NULL, NULL);
+                ret = select(max+1, NULL, &set, NULL, NULL);
                 if (ret <= 0) {
                         errorPrint("Error in select: %s", strerror(errno));
                 }
-
-                /*if (ret < size){
-                        errorPrint("Size of data to huge: %s", strerror(errno));
-                }*/
 	
-                if (write(sock, buf, ret) < ret) {
+                if (write(sock, buf, size) < ret) {
 			errorPrint("Cannot write to socket: %s", strerror(errno));
                 }
         }
@@ -353,6 +333,21 @@ void close_socket_server( int sockets[], int numsockets ){
  * fd: array of sockets in listen state
  * numfd: number of valid sockets in fd
  **/
+
+/**Create a new Accep_Loop_Thread to read from the client*/
+
+void accep_loop_thread_server(int sock){
+
+	pthread_t command_thread;
+        //struct strread_client* data;
+        //data = (struct strread_client*)malloc(sizeof(struct strread_client));
+        //data->socket=sock;
+	// Background new connection
+	if((pthread_create(&command_thread, NULL, read_client, (void*)sock))!=0){
+		errorPrint("Error while creating thread: %s", strerror(errno));
+	};
+
+}
 
 void accept_loop_server(int fd[], int numfd)
 {
