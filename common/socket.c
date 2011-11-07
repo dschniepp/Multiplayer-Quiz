@@ -18,28 +18,40 @@ void* read_client(void *param)
         //int sock = data->socket;
         
         int sock = (int)param;
-        fd_set set;
+        //fd_set set;
 	int ret;
 	static char buf[512];
 	
 	while (1) {
-		int max;
+		/*int max;
 		FD_ZERO(&set);
 		FD_SET(sock, &set);
 		FD_SET(STDIN_FILENO, &set);
-		max = (sock>STDIN_FILENO)?sock:STDIN_FILENO;
+		max = (sock>STDIN_FILENO)?sock:STDIN_FILENO;*/
 		
 		/* RTFM: select */
-		ret = select(max+1, &set, NULL, NULL, NULL);
+		/*ret = select(max+1, &set, NULL, NULL, NULL);
 		if (ret <= 0) {
 			errorPrint("Error in select: %s", strerror(errno));
 			break;
-		}
+		}*/
 		/**
 		 * sock -> STD_OUT
 		 **/
-		if (FD_ISSET(sock, &set)) {
+		/*if (FD_ISSET(sock, &set)) {
 			ret = read(sock, buf, sizeof(buf));
+			if (ret == 0) {
+				break;
+			}
+			if (ret < 0) {
+				errorPrint("Cannot read from socket: %s", strerror(errno));
+				break;
+			}
+                        //Do Stuff, after Reading!!!:-)
+                        errorPrint("Buffer: %s", buf);
+		}*/
+                
+                ret = read(sock, buf, sizeof(buf));
 			if (ret == 0) {
 				break;
 			}
@@ -49,7 +61,7 @@ void* read_client(void *param)
 			}
                         /*Do Stuff, after Reading!!!:-)*/
                         errorPrint("Buffer: %s", buf);
-		}
+                
 		/**
 		 * STDIN -> sock
 		 **/
@@ -69,7 +81,7 @@ void* read_client(void *param)
  * --> Prüfe sock nach dem Aufruf auf -1 !!!
  **/
  
-void connect_socket_client(int *sock, char serv_addr[], char port[]){
+void connect_socket_client(int *sock, char serv_addr[], char port[], char username[]){
  
 	struct addrinfo *addr_info, *p, hints;
 	int ret;
@@ -117,6 +129,7 @@ void connect_socket_client(int *sock, char serv_addr[], char port[]){
 			p = p->ai_next;		
 		}
         freeaddrinfo(addr_info);
+        write_client(*sock, username);
 }
 /**Function to close Clientsocket*/
 
@@ -126,18 +139,20 @@ void close_socket_client( int sock ){
 
 /**Write vom Client*/
 
-void write_client(int sock, char buf[], size_t size)
+void write_client(int sock, char buf[])
 {
-	fd_set set;
-	int ret;
-
-	int max;
+	/*fd_set set;
+	int ret;*/
+        size_t size = strlen(buf);
+        write(sock, buf, size);
+	/*
+        int max;
 	FD_ZERO(&set);
 	FD_SET(sock, &set);
 	FD_SET(STDIN_FILENO, &set);
 	max = (sock>STDIN_FILENO)?sock:STDIN_FILENO;
 		
-	/* RTFM: select */
+	// RTFM: select
         if (FD_ISSET(sock, &set)) {
                 ret = select(max+1, NULL, &set, NULL, NULL);
                 if (ret <= 0) {
@@ -148,12 +163,12 @@ void write_client(int sock, char buf[], size_t size)
 			errorPrint("Cannot write to socket: %s", strerror(errno));
                 }
         }
-		
+	*/	
 }
 
 /**Create a new Command_Thread for server read*/
 
-void command_thread_client(int sock){
+void listener_thread_client(int sock){
 
 	pthread_t command_thread;
         //struct strread_client* data;

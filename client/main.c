@@ -22,35 +22,34 @@
 int main(int argc, char ** argv)
 {
         int sock;
-        //char teststring[20];
-        size_t str_length;
-        size_t str_length2;
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
 
-	if (argc <= 2)
+	if (argc <= 3)
 	{
 		errorPrint("Simple Echo-Client");
-		errorPrint("Usage: %s [SERVER] [PORT]", argv[0]);
-		errorPrint("Example: %s www.sixxs.net 80", argv[0]);
+		errorPrint("Usage: %s [SERVER] [PORT] [USERNAME]", argv[0]);
+		errorPrint("Example: %s www.sixxs.net 80 Dieter", argv[0]);
 		exit(1);
 	}
         
-        connect_socket_client(&sock, argv[1], argv[2]);
+        /**Establish new Connection with server and send Username*/
+        
+        connect_socket_client(&sock, argv[1], argv[2], argv[3]);
         if (sock==-1){
                 errorPrint("Error while connecting to server");
         }
         
-        char teststring[]="Testtext\n";
-        str_length=strlen(teststring);
+        listener_thread_client(sock);
         
-        char teststring2[]="Noch n Test";
-        str_length2=strlen(teststring2);
+        //char teststring[]="Testtext\n";
         
-        command_thread_client(sock);
+        //char teststring2[]="Noch n Test";
         
-        write_client(sock, teststring, str_length);
-        write_client(sock, teststring2, str_length2);
+        
+        
+        //write_client(sock, teststring);
+        //write_client(sock, teststring2);
         
         while(1){
         }
