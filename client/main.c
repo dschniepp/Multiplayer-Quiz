@@ -67,6 +67,8 @@ int main(int argc, char ** argv)
         
         preparation_setMode(PREPARATION_MODE_PRIVILEGED);
     
+        preparation_addPlayer(argv[3]);
+    
         preparation_showWindow();
         
         guiMain();       
