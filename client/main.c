@@ -10,6 +10,7 @@
 #define _POSIX_SOURCE 1
 
 #include "common/socket.h"
+#include "client/gui/gui_interface.h"
 
 /**
  * sock -> STDOUT
