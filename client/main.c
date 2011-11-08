@@ -18,23 +18,23 @@
  **/
 
 void preparation_onCatalogChanged(const char *newSelection){
-    
+    infoPrint("preparation_onCatalogChanged");
 }
 
 void preparation_onStartClicked(const char *currentSelection){
-    
+    infoPrint("preparation_onStartClicked");
 }
 
 void preparation_onWindowClosed(void){
-    
+    infoPrint("preparation_onWindowClosed");    
 }
 
 void game_onAnswerClicked(int index){
-    
+    infoPrint("game_onAnswerClicked");    
 }
 
 void game_onWindowClosed(void){
-    
+    infoPrint("game_onWindowClosed");    
 }
 
 
