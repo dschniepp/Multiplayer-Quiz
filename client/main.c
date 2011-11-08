@@ -50,11 +50,17 @@ int main(int argc, char ** argv)
         
         preparation_setMode(PREPARATION_MODE_PRIVILEGED);
     
-        preparation_showWindow(true);
+        preparation_showWindow();
         
         guiMain();       
     
         guiDestroy();    
+        
+        
+        if (lr.h.length = strlen(argv[3]<=31)){
+                lr.h.type = 1;
+                lr.name = argv[3];    
+        }
         
         
         

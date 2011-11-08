@@ -24,7 +24,7 @@ struct NET_MESSAGE {
 };
 */
 
-void prepare_message(void* hdr , int type)
+void write_message(void)
 {
         //struct NET_HEADER* phdr = (struct NET_HEADER*)hdr;
 
@@ -98,7 +98,7 @@ void prepare_message(void* hdr , int type)
 
 }
 
-void print_message(void * hdr)
+/*void print_message(void * hdr)
 {
 	struct NET_HEADER* phdr = (struct NET_HEADER*)hdr;
 
@@ -114,7 +114,7 @@ void print_message(void * hdr)
 		printf("Unknown type: %d\n", phdr->type);
 	}
 }
-
+*/
 /*
 int main(int argc, char ** argv)
 {
