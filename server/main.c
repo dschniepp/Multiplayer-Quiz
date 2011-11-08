@@ -13,12 +13,13 @@
 /**
  * struct to pass custom data to echo_thread
  **/
+/*
 struct client_data {
 	int sock;
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
 };
-
+*/
 int main(int argc, char ** argv)
 {
 	char *server, *service;

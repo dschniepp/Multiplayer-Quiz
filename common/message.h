@@ -17,7 +17,7 @@ extern "C" {
 #include <string.h>
 #include <stdint.h>
 #include <arpa/inet.h>
-    
+#include "global.h"    
 
 
 #ifdef	__cplusplus

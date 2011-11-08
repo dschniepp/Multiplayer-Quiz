@@ -22,6 +22,7 @@
 int main(int argc, char ** argv)
 {
         int sock;
+        struct GB_LOGIN_REQUEST lr;
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
 
@@ -41,6 +42,8 @@ int main(int argc, char ** argv)
         }
         
         listener_thread_client(sock);
+        
+        
         
         //char teststring[]="Testtext\n";
         
