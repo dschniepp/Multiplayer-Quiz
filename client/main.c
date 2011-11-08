@@ -41,6 +41,18 @@ int main(int argc, char ** argv)
         }
         
         listener_thread_client(sock);
+    
+        /* GUI */
+    
+        guiInit(&argc, &argv);
+        
+        preparation_setMode(PREPARATION_MODE_PRIVILEGED);
+    
+        preparation_showWindow(true);
+        
+        guiMain();       
+    
+        guiDestroy();    
         
         //char teststring[]="Testtext\n";
         
