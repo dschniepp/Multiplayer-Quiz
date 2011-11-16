@@ -14,6 +14,40 @@
 #include "common/message.h"
 #include "common/global.h"
 
+struct GUI_DATA {
+	int argc;
+        char ** argv;
+};
+
+void* gui_thread(void *param){
+    
+    struct GUI_DATA * gui_data;
+    gui_data = (struct GUI_DATA*)param;
+    
+    guiInit(&gui_data->argc, &gui_data->argv);
+        
+        //preparation_addPlayer(argv[3]);
+        
+        preparation_setMode(PREPARATION_MODE_PRIVILEGED);
+    
+        preparation_addCatalog("Test.cat"); 
+    
+        preparation_addPlayer(gui_data->argv[3]);
+    
+        preparation_showWindow();
+        
+        errorPrint("before GUIMain");
+        
+        guiMain();       
+    
+        errorPrint("GUI runs???");
+        
+        guiDestroy();
+    
+    pthread_exit(0);
+    return NULL;
+}
+
 void preparation_onCatalogChanged(const char *newSelection){
     infoPrint("preparation_onCatalogChanged");
 }
@@ -39,7 +73,8 @@ int main(int argc, char ** argv)
 {
         int sock;
         int ret;
-        //struct GB_LOGIN_REQUEST lr;
+        struct GUI_DATA *gui_data;
+        struct GB_LOGIN_REQUEST lg_rq;
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
 
@@ -51,68 +86,48 @@ int main(int argc, char ** argv)
 		exit(1);
 	}
         
-        /**Establish new Connection with server and send Username*/
+        /**Establish new Connection with server*/
         
         connect_socket_client(&sock, argv[1], argv[2]);
         if (sock==-1){
                 errorPrint("Error while connecting to server");
         }
         
-        listener_thread_client(sock);
-        
-        struct GB_LOGIN_REQUEST lg_rq;
-        
-        if (strlen(argv[3])<=31){
-                //GB_LR.h.type = 1;
-                strcpy(lg_rq.name, argv[3]);
-                //gb_lr.h.size = strlen(argv[3]);
+        /**Start the Listener-Thread*/
+
+	pthread_t listener_thr;
+	if((pthread_create(&listener_thr, NULL, listener_thread, (void*)sock))!=0){
+		errorPrint("Error while creating thread: %s", strerror(errno));
         }
         
-
+        /**Write LOGIN_REQUEST to server*/
+        
+        if (strlen(argv[3])<=31){
+                strcpy(lg_rq.name, argv[3]);
+        }else{  /**cut string after 31 characters*/ //Nachfragen, ob nur die eine Zeile reicht --> strncpy füllt mit Nullbytes auf
+                strncpy(lg_rq.name, argv[3], 31);
+        }
         
         prepare_message(&lg_rq, TYPE_LR, strlen(argv[3]));
         ret = write(sock,&lg_rq,(strlen(argv[3])+sizeof(lg_rq.h)));
-                        test_return(ret);
-                        if (ret > 0) {
-                                infoPrint("Write to socket successful!");
-                        }      
+        test_return(ret);
+        if (ret > 0) {
+                infoPrint("Write to socket successful!");
+        }      
     
-        /* GUI */
-    
-        guiInit(&argc, &argv);
+        /*Start the GUI-Thread*/
+                        
+        gui_data = (struct GUI_DATA*)malloc(sizeof(struct GUI_DATA));
+                        
+        gui_data->argc=argc;
+        gui_data->argv=argv;
         
-        //preparation_addPlayer(argv[3]);
-        
-        preparation_setMode(PREPARATION_MODE_PRIVILEGED);
-    
-        preparation_addCatalog("Test.cat"); 
-    
-        preparation_addPlayer(argv[3]);
-    
-        preparation_showWindow();
-        
-        errorPrint("before GUIMain");
-        
-        guiMain();       
-    
-        errorPrint("GUI runs???");
-        
-        //guiDestroy();    
-        
-        
-        
-        
-        //write_message(sock, GB_LR.h.type);
-        
-        
-        //char teststring[]="Testtext\n";
-        
-        //char teststring2[]="Noch n Test";
-        
-        
-        
-        //write_client(sock, teststring);
-        //write_client(sock, teststring2);
+	pthread_t gui_thr;
+	if((pthread_create(&gui_thr, NULL, gui_thread, gui_data))!=0){
+		errorPrint("Error while creating thread: %s", strerror(errno));
+        }
+            
+        //Endless loop to avoid closing at the moment
         
         while(1){
         }

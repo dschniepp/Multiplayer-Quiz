@@ -1,27 +1,24 @@
 /**socket.c*/
 #include "common/socket.h"
-#include "common/message.h"
 
 /**--------------Client Functions---------------------*/
 
-/**----Internal Functions*/
+/**----External Functions*/
 
-struct strread_client {
-	int socket;
-};
+/**Tests the return value of the read/write command -> sockets*/
 
 void test_return(int ret){
     	if (ret == 0) {
-		errorPrint("Connection closed while trying to read");
+		errorPrint("Connection closed while trying to read/write");
 	}
 	if (ret < 0) {
-		errorPrint("Cannot read from socket: %s", strerror(errno));		
+		errorPrint("Cannot read from/write to socket: %s", strerror(errno));		
 	}
 }
 
-/**Read vom Client --> als eigenen Thread starten*/
+/**Listener-Thread client*/
 
-void* read_client(void *param)
+void* listener_thread(void *param)
 {
         int sock = (int)param;
 	int ret;
@@ -83,15 +80,12 @@ void* read_client(void *param)
         pthread_exit(0);
 	return NULL;
 }
-
-
-/**----External Functions*/
  
 /**Function to connect client sockets
  * Call-By-Refferenz Übergabe --> sock
  * Je nach Fall, wird folgendes in sock geschrieben:
  * Connected	=	Socketnr
- * Error		=	-1
+ * Error	=	-1
  * --> Prüfe sock nach dem Aufruf auf -1 !!!
  **/
  
@@ -144,54 +138,10 @@ void connect_socket_client(int *sock, char serv_addr[], char port[]){
 		}
         freeaddrinfo(addr_info);
 }
-/**Function to close Clientsocket*/
+/**Function to close client socket*/
 
 void close_socket_client( int sock ){
     close(sock);
-}
-
-/**Write vom Client*/
-
-void write_client(int sock, char buf[])
-{
-	/*fd_set set;
-	int ret;*/
-        size_t size = strlen(buf);
-        write(sock, buf, size);
-	/*
-        int max;
-	FD_ZERO(&set);
-	FD_SET(sock, &set);
-	FD_SET(STDIN_FILENO, &set);
-	max = (sock>STDIN_FILENO)?sock:STDIN_FILENO;
-		
-	// RTFM: select
-        if (FD_ISSET(sock, &set)) {
-                ret = select(max+1, NULL, &set, NULL, NULL);
-                if (ret <= 0) {
-                        errorPrint("Error in select: %s", strerror(errno));
-                }
-	
-                if (write(sock, buf, size) < ret) {
-			errorPrint("Cannot write to socket: %s", strerror(errno));
-                }
-        }
-	*/	
-}
-
-/**Create a new Command_Thread for server read*/
-
-void listener_thread_client(int sock){
-
-	pthread_t command_thread;
-        //struct strread_client* data;
-        //data = (struct strread_client*)malloc(sizeof(struct strread_client));
-        //data->socket=sock;
-	// Background new connection
-	if((pthread_create(&command_thread, NULL, read_client, (void*)sock))!=0){
-		errorPrint("Error while creating thread: %s", strerror(errno));
-	};
-
 }
 
 /**--------------Server Functions---------------------*/
@@ -361,21 +311,6 @@ void close_socket_server( int sockets[], int numsockets ){
  * fd: array of sockets in listen state
  * numfd: number of valid sockets in fd
  **/
-
-/**Create a new Accep_Loop_Thread to read from the client*/
-
-void accep_loop_thread_server(int sock){
-
-	pthread_t command_thread;
-        //struct strread_client* data;
-        //data = (struct strread_client*)malloc(sizeof(struct strread_client));
-        //data->socket=sock;
-	// Background new connection
-	if((pthread_create(&command_thread, NULL, read_client, (void*)sock))!=0){
-		errorPrint("Error while creating thread: %s", strerror(errno));
-	};
-
-}
 
 void accept_loop_server(int fd[], int numfd)
 {
