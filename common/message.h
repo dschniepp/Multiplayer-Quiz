@@ -19,7 +19,9 @@ extern "C" {
 #include <arpa/inet.h>
 #include "global.h"  
     
-    void write_message(void);
+    //void write_message(int sock, int type);
+    void prepare_message(void * hdr, int type, int size);
+    void print_message(void * hdr);
 
 
 #ifdef	__cplusplus

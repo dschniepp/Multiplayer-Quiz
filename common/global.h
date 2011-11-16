@@ -12,17 +12,30 @@
 extern "C" {
 #endif
 
-    extern struct GB_NET_HEADER {
-        int type;
-        int length;
+    #define TYPE_LR 1
+    #define TYPE_LROK 2
+
+    #pragma pack(1)
+    struct GB_NET_HEADER {
+        uint8_t type;
+        uint16_t size;
     };
     
-    extern struct GB_LOGIN_REQUEST {
+    struct GB_LOGIN_REQUEST {
         struct GB_NET_HEADER h;
         char name[31];
     };
+    
+    struct GB_LOGIN_RESPONSE_OK {
+        struct GB_NET_HEADER h;
+        uint8_t client_id;
+    };
+    //struct GB_LOGIN_REQUEST GB_LR;
+    
+    #pragma pack(0)
 
-
+    
+    
 #ifdef	__cplusplus
 }
 #endif

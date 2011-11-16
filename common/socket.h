@@ -16,8 +16,8 @@
 #include "common/util.h"
 #include <pthread.h>
 #include <sys/un.h>
-#include "message.h"
-#include "global.h" 
+#include "common/message.h"
+#include "common/global.h" 
 
 
 /*--------------Client Functions---------------------*/

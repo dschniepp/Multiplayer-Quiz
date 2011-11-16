@@ -1,5 +1,6 @@
 /**socket.c*/
-#include  "socket.h"
+#include "common/socket.h"
+#include "common/message.h"
 
 /**--------------Client Functions---------------------*/
 
@@ -20,8 +21,10 @@ void* read_client(void *param)
         int sock = (int)param;
         //fd_set set;
 	int ret;
-	static char buf[512];
-	
+	//static char buf[512];
+        struct GB_NET_HEADER net_head;
+	//void * buf;
+        
 	while (1) {
 		/*int max;
 		FD_ZERO(&set);
@@ -29,8 +32,8 @@ void* read_client(void *param)
 		FD_SET(STDIN_FILENO, &set);
 		max = (sock>STDIN_FILENO)?sock:STDIN_FILENO;*/
 		
-		/* RTFM: select */
-		/*ret = select(max+1, &set, NULL, NULL, NULL);
+		/* RTFM: select *//*
+		ret = select(max+1, &set, NULL, NULL, NULL);
 		if (ret <= 0) {
 			errorPrint("Error in select: %s", strerror(errno));
 			break;
@@ -51,16 +54,21 @@ void* read_client(void *param)
                         errorPrint("Buffer: %s", buf);
 		}*/
                 
-                ret = read(sock, buf, sizeof(buf));
+                ret = read(sock, &net_head, sizeof(net_head));
 			if (ret == 0) {
-				break;
+				errorPrint("Connection closed while trying to read");
 			}
 			if (ret < 0) {
 				errorPrint("Cannot read from socket: %s", strerror(errno));
-				break;
+				
 			}
+                        if (ret > 0) {
+                                errorPrint("Read from socket successful!");
+                        }
+                
+                //print_message(&buf);
                         /*Do Stuff, after Reading!!!:-)*/
-                        errorPrint("Buffer: %s", buf);
+                        //errorPrint("Header gelesen!");
                 
 		/**
 		 * STDIN -> sock
@@ -129,7 +137,7 @@ void connect_socket_client(int *sock, char serv_addr[], char port[], char userna
 			p = p->ai_next;		
 		}
         freeaddrinfo(addr_info);
-        write_client(*sock, username);
+        //write_client(*sock, username);
 }
 /**Function to close Clientsocket*/
 
