@@ -135,6 +135,10 @@ int main(int argc, char ** argv)
         
         preparation_setMode(PREPARATION_MODE_PRIVILEGED);
     
+        preparation_addCatalog("Test.cat"); 
+    
+        preparation_addPlayer("Dani");
+    
         preparation_showWindow();
         
         guiMain();       
