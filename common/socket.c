@@ -10,69 +10,75 @@ struct strread_client {
 	int socket;
 };
 
+void test_return(int ret){
+    	if (ret == 0) {
+		errorPrint("Connection closed while trying to read");
+	}
+	if (ret < 0) {
+		errorPrint("Cannot read from socket: %s", strerror(errno));		
+	}
+}
+
 /**Read vom Client --> als eigenen Thread starten*/
 
 void* read_client(void *param)
 {
-        //struct strread_client * data;
-	//data = (struct strread_client*)param;
-        //int sock = data->socket;
-        
         int sock = (int)param;
-        //fd_set set;
 	int ret;
-	//static char buf[512];
         struct GB_NET_HEADER net_head;
-	//void * buf;
+        struct GB_LOGIN_RESPONSE_OK lg_rs_ok;
+        struct GB_ErrorWarning er_wa;
         
 	while (1) {
-		/*int max;
-		FD_ZERO(&set);
-		FD_SET(sock, &set);
-		FD_SET(STDIN_FILENO, &set);
-		max = (sock>STDIN_FILENO)?sock:STDIN_FILENO;*/
-		
-		/* RTFM: select *//*
-		ret = select(max+1, &set, NULL, NULL, NULL);
-		if (ret <= 0) {
-			errorPrint("Error in select: %s", strerror(errno));
-			break;
-		}*/
-		/**
-		 * sock -> STD_OUT
-		 **/
-		/*if (FD_ISSET(sock, &set)) {
-			ret = read(sock, buf, sizeof(buf));
-			if (ret == 0) {
-				break;
-			}
-			if (ret < 0) {
-				errorPrint("Cannot read from socket: %s", strerror(errno));
-				break;
-			}
-                        //Do Stuff, after Reading!!!:-)
-                        errorPrint("Buffer: %s", buf);
-		}*/
-                
-                ret = read(sock, &net_head, sizeof(net_head));
-			if (ret == 0) {
-				errorPrint("Connection closed while trying to read");
-			}
-			if (ret < 0) {
-				errorPrint("Cannot read from socket: %s", strerror(errno));
-				
-			}
+		ret = read(sock, &net_head, sizeof(net_head));
+                        test_return(ret);
                         if (ret > 0) {
-                                errorPrint("Read from socket successful!");
+                                infoPrint("Read from socket successful!");
                         }
+        switch(net_head.type){
                 
-                //print_message(&buf);
-                        /*Do Stuff, after Reading!!!:-)*/
-                        //errorPrint("Header gelesen!");
-                
-		/**
-		 * STDIN -> sock
-		 **/
+                        case 2:
+                                infoPrint("Case 2");
+                                
+                                ret = read(sock, &lg_rs_ok.client_id, ntohs((net_head.size)));
+                                test_return(ret);
+                                if (ret > 0) {
+                                        infoPrint("Client_ID: %d!", lg_rs_ok.client_id);
+                                }
+                                break;
+                    
+                        case 255:
+                                infoPrint("Case 255");
+                                ret = read(sock, &er_wa.msg_type, 1);
+                                test_return(ret);
+                                if (ret > 0) {
+                                        errorPrint("Errortype: %d!",er_wa.msg_type);
+                                }
+                                
+                                //errorPrint("Net_Head size: %d", ((ntohs(net_head.size))-1));
+                                
+                                er_wa.error_msg = (char *)malloc(((ntohs(net_head.size))-1)*sizeof(char));
+                                
+                                //er_wa.error_msg[ntohs((net_head.size))-1];
+                                int z=0;
+                                while (z<((ntohs(net_head.size))-1)){
+                                    ret = read(sock, &er_wa.error_msg[z],1);
+                                    z++;
+                                }
+                                
+                                //ret = read(sock, &er_wa.error_msg,((ntohs(net_head.size))-1));
+                                test_return(ret);
+                                if (ret > 0) {
+                                        errorPrint("Error: %s!", er_wa.error_msg);
+                                }
+                                break;
+                            
+                        default:
+                                infoPrint("default Case");
+                                break;
+                }
+        
+        break;
 	}
         pthread_exit(0);
 	return NULL;
@@ -89,7 +95,7 @@ void* read_client(void *param)
  * --> Prüfe sock nach dem Aufruf auf -1 !!!
  **/
  
-void connect_socket_client(int *sock, char serv_addr[], char port[], char username[]){
+void connect_socket_client(int *sock, char serv_addr[], char port[]){
  
 	struct addrinfo *addr_info, *p, hints;
 	int ret;
@@ -137,7 +143,6 @@ void connect_socket_client(int *sock, char serv_addr[], char port[], char userna
 			p = p->ai_next;		
 		}
         freeaddrinfo(addr_info);
-        //write_client(*sock, username);
 }
 /**Function to close Clientsocket*/
 

@@ -30,6 +30,12 @@ extern "C" {
         struct GB_NET_HEADER h;
         uint8_t client_id;
     };
+    
+    struct GB_ErrorWarning{
+        struct GB_NET_HEADER h;
+        uint8_t msg_type;
+        char *error_msg;
+    };
     //struct GB_LOGIN_REQUEST GB_LR;
     
     #pragma pack(0)

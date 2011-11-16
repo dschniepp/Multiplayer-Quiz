@@ -14,11 +14,6 @@
 #include "common/message.h"
 #include "common/global.h"
 
-/**
- * sock -> STDOUT
- * STDIN -> sock
- **/
-
 void preparation_onCatalogChanged(const char *newSelection){
     infoPrint("preparation_onCatalogChanged");
 }
@@ -43,6 +38,7 @@ void game_onWindowClosed(void){
 int main(int argc, char ** argv)
 {
         int sock;
+        int ret;
         //struct GB_LOGIN_REQUEST lr;
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
@@ -57,78 +53,32 @@ int main(int argc, char ** argv)
         
         /**Establish new Connection with server and send Username*/
         
-        connect_socket_client(&sock, argv[1], argv[2], argv[3]);
+        connect_socket_client(&sock, argv[1], argv[2]);
         if (sock==-1){
                 errorPrint("Error while connecting to server");
         }
         
-        //listener_thread_client(sock);
+        listener_thread_client(sock);
         
-        struct GB_LOGIN_REQUEST gb_lr;
+        struct GB_LOGIN_REQUEST lg_rq;
         
         if (strlen(argv[3])<=31){
                 //GB_LR.h.type = 1;
-                strcpy(gb_lr.name, argv[3]);
+                strcpy(lg_rq.name, argv[3]);
                 //gb_lr.h.size = strlen(argv[3]);
         }
         
-        int ret=0;
+
         
-        prepare_message(&gb_lr, TYPE_LR, strlen(argv[3]));
-        ret = write(sock,&gb_lr,(strlen(argv[3])+sizeof(gb_lr.h)));
-                        if (ret == 0) {
-				errorPrint("Connection closed while trying to write");
-			}
-			if (ret < 0) {
-				errorPrint("Cannot write to socket: %s", strerror(errno));
-				
-			}
+        prepare_message(&lg_rq, TYPE_LR, strlen(argv[3]));
+        ret = write(sock,&lg_rq,(strlen(argv[3])+sizeof(lg_rq.h)));
+                        test_return(ret);
                         if (ret > 0) {
-                                errorPrint("Write to socket successful!");
-                        }
-        
-        struct GB_NET_HEADER net_head;
-        struct GB_LOGIN_RESPONSE_OK lg_rs_ok;
-        
-        ret = read(sock, &net_head, sizeof(net_head));
-			if (ret == 0) {
-				errorPrint("Connection closed while trying to read");
-			}
-			if (ret < 0) {
-				errorPrint("Cannot read from socket: %s", strerror(errno));
-				
-			}
-                        if (ret > 0) {
-                                errorPrint("Read from socket successful!");
-                        }
-        switch(net_head.type){
-                
-                        case 2:
-                                errorPrint("Case 2");
-                                ret = read(sock, &lg_rs_ok.client_id, sizeof(lg_rs_ok.client_id));
-                                if (ret == 0) {
-                                        errorPrint("Connection closed while trying to read");
-                                }
-                                if (ret < 0) {
-                                        errorPrint("Cannot read from socket: %s", strerror(errno));
-                                }
-                                if (ret > 0) {
-                                        errorPrint("Read from socket successful: %d!", ntohs(lg_rs_ok.client_id));
-                                }
-                                break;
-                    
-                        case 255:
-                                errorPrint("Case 255");
-                                break;
-                            
-                        default:
-                                errorPrint("default Case");
-                                break;
-        }
-                        
+                                infoPrint("Write to socket successful!");
+                        }      
     
         /* GUI */
-    /*
+    
         guiInit(&argc, &argv);
         
         //preparation_addPlayer(argv[3]);
@@ -137,15 +87,19 @@ int main(int argc, char ** argv)
     
         preparation_addCatalog("Test.cat"); 
     
-        preparation_addPlayer("Dani");
+        preparation_addPlayer(argv[3]);
     
         preparation_showWindow();
         
+        errorPrint("before GUIMain");
+        
         guiMain();       
     
-        guiDestroy();    
+        errorPrint("GUI runs???");
         
-     */   
+        //guiDestroy();    
+        
+        
         
         
         //write_message(sock, GB_LR.h.type);
