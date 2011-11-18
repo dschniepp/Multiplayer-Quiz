@@ -31,6 +31,13 @@ extern "C" {
         uint8_t client_id;
     };
     
+    struct GB_PlayerList{
+        struct GB_NET_HEADER h;
+        char playername[32];
+        unsigned int score;
+        uint8_t client_id;
+    };
+    
     struct GB_ErrorWarning{
         struct GB_NET_HEADER h;
         uint8_t msg_type;

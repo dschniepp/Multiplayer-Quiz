@@ -25,12 +25,16 @@ void* listener_thread(void *param)
         struct GB_NET_HEADER net_head;
         struct GB_LOGIN_RESPONSE_OK lg_rs_ok;
         struct GB_ErrorWarning er_wa;
-        
+        struct GB_PlayerList pl_ls[6];
+        int z;
+        //int t=0;
 	while (1) {
 		ret = read(sock, &net_head, sizeof(net_head));
                         test_return(ret);
                         if (ret > 0) {
                                 infoPrint("Read from socket successful!");
+                                infoPrint("NetHead_type: %d!", net_head.type);
+                                infoPrint("NetHead_size: %d!", ntohs(net_head.size));
                         }
         switch(net_head.type){
                 
@@ -43,7 +47,30 @@ void* listener_thread(void *param)
                                         infoPrint("Client_ID: %d!", lg_rs_ok.client_id);
                                 }
                                 break;
-                    
+                        case 6:
+                                infoPrint("Case 6");
+                                
+                                z=0;
+                                while (z<((ntohs((net_head.size)))/37)){
+                                
+                                ret = read(sock, &pl_ls[z].playername, 32);
+                                test_return(ret);
+                                if (ret > 0) {
+                                        infoPrint("playername: %s!", pl_ls[z].playername);
+                                }
+                                ret = read(sock, &pl_ls[z].score, 4);
+                                test_return(ret);
+                                if (ret > 0) {
+                                        infoPrint("score: %d!", ntohs(pl_ls[z].score));
+                                }
+                                ret = read(sock, &pl_ls[z].client_id, 1);
+                                test_return(ret);
+                                if (ret > 0) {
+                                        infoPrint("Client_ID: %d!", pl_ls[z].client_id);
+                                }
+                                z++;
+                                }
+                                break;
                         case 255:
                                 infoPrint("Case 255");
                                 ret = read(sock, &er_wa.msg_type, 1);
@@ -57,25 +84,27 @@ void* listener_thread(void *param)
                                 er_wa.error_msg = (char *)malloc(((ntohs(net_head.size))-1)*sizeof(char));
                                 
                                 //er_wa.error_msg[ntohs((net_head.size))-1];
-                                int z=0;
+                                z=0;
                                 while (z<((ntohs(net_head.size))-1)){
                                     ret = read(sock, &er_wa.error_msg[z],1);
                                     z++;
                                 }
+
                                 
                                 //ret = read(sock, &er_wa.error_msg,((ntohs(net_head.size))-1));
-                                test_return(ret);
+                                
                                 if (ret > 0) {
                                         errorPrint("Error: %s!", er_wa.error_msg);
                                 }
+                                exit(0);
                                 break;
                             
                         default:
                                 infoPrint("default Case");
                                 break;
                 }
-        
-        break;
+        //t++;
+        //break;
 	}
         pthread_exit(0);
 	return NULL;
