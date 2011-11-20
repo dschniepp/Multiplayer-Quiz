@@ -12,8 +12,19 @@
 extern "C" {
 #endif
 
-    #define TYPE_LR 1
-    #define TYPE_LROK 2
+    #define TYPE_LG_RQ 1
+    #define TYPE_LG_RQ_OK 2
+    #define TYPE_CA_RQ 3
+    #define TYPE_CA_RP 4
+    #define TYPE_CA_CH 5
+    #define TYPE_PL_LI 6
+    #define TYPE_ST_GA 7
+    #define TYPE_QU_RQ 8
+    #define TYPE_QU 9
+    #define TYPE_QU_AN 10
+    #define TYPE_QU_RE 11
+    #define TYPE_GA_OV 12
+    #define TYPE_ER_WA 255
 
     #pragma pack(1)
     struct GB_NET_HEADER {
@@ -31,14 +42,46 @@ extern "C" {
         uint8_t client_id;
     };
     
-    struct GB_PlayerList{
+    struct GB_CATALOG_REQUEST {
+        struct GB_NET_HEADER h;
+    };
+    
+    struct GB_CATALOG_RESPONSE {
+        struct GB_NET_HEADER h;
+        char *catalog_msg;
+    };
+    
+    struct GB_CATALOG_CHANGE {
+        struct GB_NET_HEADER h;
+        char *catalog_msg;
+    };
+    
+    struct GB_START_GAME {
+        struct GB_NET_HEADER h;
+        char *catalog_msg;
+    };
+    
+    struct GB_QUESTION_REQUEST {
+        struct GB_NET_HEADER h;
+    };
+    
+    struct GB_QUESTION {
+        struct GB_NET_HEADER h;
+        char question[256];
+        char answer[128][4];
+        int time;
+    };
+    
+    
+    
+    struct GB_Player_List{
         struct GB_NET_HEADER h;
         char playername[32];
         unsigned int score;
         uint8_t client_id;
     };
     
-    struct GB_ErrorWarning{
+    struct GB_Error_Warning{
         struct GB_NET_HEADER h;
         uint8_t msg_type;
         char *error_msg;

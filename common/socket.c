@@ -24,11 +24,15 @@ void* listener_thread(void *param)
 	int ret;
         struct GB_NET_HEADER net_head;
         struct GB_LOGIN_RESPONSE_OK lg_rs_ok;
-        struct GB_ErrorWarning er_wa;
-        struct GB_PlayerList pl_ls[6];
+        struct GB_Player_List pl_li[6];
+        struct GB_CATALOG_RESPONSE ca_rp[11]; //Maximum of 10 catalogs
+        struct GB_CATALOG_CHANGE ca_ch;
+        struct GB_START_GAME st_ga;
+        struct GB_Error_Warning er_wa;
+        int ca_rp_counter=0;
         int z;
-        //int t=0;
-	while (1) {
+        int t=0;
+	while (t<20) {
 		ret = read(sock, &net_head, sizeof(net_head));
                         test_return(ret);
                         if (ret > 0) {
@@ -38,40 +42,112 @@ void* listener_thread(void *param)
                         }
         switch(net_head.type){
                 
-                        case 2:
+                        case TYPE_LG_RQ_OK:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 2");
                                 
                                 ret = read(sock, &lg_rs_ok.client_id, ntohs((net_head.size)));
                                 test_return(ret);
                                 if (ret > 0) {
-                                        infoPrint("Client_ID: %d!", lg_rs_ok.client_id);
+                                    infoPrint("Client_ID: %d!", lg_rs_ok.client_id);
                                 }
                                 break;
-                        case 6:
+                        case TYPE_CA_RP:
+                                infoPrint("Case 4");
+                                
+                                if (ca_rp_counter<10){
+                                    if ((ntohs((net_head.size)))!=0){
+                                        
+                                        ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
+                                
+                                        z=0;
+                                        while (z<((ntohs(net_head.size)))){
+                                                ret = read(sock, &ca_rp[ca_rp_counter].catalog_msg[z],1);
+                                                z++;
+                                        }
+                                        if (ret > 0) {
+                                        errorPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
+                                        }
+                                        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                        ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
+                                    }else{
+                                        infoPrint("All catalogs read!");
+                                        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                        ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
+                                        /*ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
+                                        ca_rp[ca_rp_counter].catalog_msg[0]="0";*/
+                                    }
+                                }else{
+                                    if(ca_rp_counter==10){
+                                        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                        ca_rp[ca_rp_counter].h.size=0;
+                                        errorPrint("Error: You can not show more then 10 catalogs!");
+                                    }   
+                                }
+                                ca_rp_counter++;
+                                break;
+                        case TYPE_CA_CH:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
+                                infoPrint("Case 5");
+                                
+                                ca_ch.catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
+                                
+                                z=0;
+                                while (z<(ntohs(net_head.size))){
+                                    ret = read(sock, &ca_ch.catalog_msg[z],1);
+                                    infoPrint("changed cat [%d]: %s", z, ca_ch.catalog_msg);
+                                    z++;
+                                }
+                                
+                                if (ret > 0) {
+                                        errorPrint("Changed Catalog: %s!",ca_ch.catalog_msg);
+                                }
+                                break;
+                        case TYPE_PL_LI:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 6");
                                 
                                 z=0;
                                 while (z<((ntohs((net_head.size)))/37)){
                                 
-                                ret = read(sock, &pl_ls[z].playername, 32);
+                                ret = read(sock, &pl_li[z].playername, 32);
                                 test_return(ret);
                                 if (ret > 0) {
-                                        infoPrint("playername: %s!", pl_ls[z].playername);
+                                        infoPrint("playername: %s!", pl_li[z].playername);
                                 }
-                                ret = read(sock, &pl_ls[z].score, 4);
+                                ret = read(sock, &pl_li[z].score, 4);
                                 test_return(ret);
                                 if (ret > 0) {
-                                        infoPrint("score: %d!", ntohs(pl_ls[z].score));
+                                        infoPrint("score: %d!", ntohs(pl_li[z].score));
                                 }
-                                ret = read(sock, &pl_ls[z].client_id, 1);
+                                ret = read(sock, &pl_li[z].client_id, 1);
                                 test_return(ret);
                                 if (ret > 0) {
-                                        infoPrint("Client_ID: %d!", pl_ls[z].client_id);
+                                        infoPrint("Client_ID: %d!", pl_li[z].client_id);
                                 }
                                 z++;
                                 }
                                 break;
-                        case 255:
+                        case TYPE_ST_GA:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
+                                infoPrint("Case 7");
+                                if ((ntohs(net_head.size))!=0){
+                                        st_ga.catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
+                                
+                                        z=0;
+                                        while (z<((ntohs(net_head.size)))){
+                                                ret = read(sock, &st_ga.catalog_msg[z],1);
+                                                z++;
+                                        }
+                                        if (ret > 0) {
+                                        errorPrint("Start_Game Message: %s!",st_ga.catalog_msg);
+                                        }
+                                }else{
+                                        infoPrint("Server is ready to start the game! (Start_Game Message received)");
+                                }                                
+                                break;
+                        case TYPE_ER_WA:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 255");
                                 ret = read(sock, &er_wa.msg_type, 1);
                                 test_return(ret);
@@ -100,10 +176,11 @@ void* listener_thread(void *param)
                                 break;
                             
                         default:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("default Case");
                                 break;
                 }
-        //t++;
+        t++;
         //break;
 	}
         pthread_exit(0);

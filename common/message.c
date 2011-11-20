@@ -107,7 +107,7 @@ void prepare_message(void * hdr, int type, int size)
         
 
 }*/
-
+/*
 void print_message(void * hdr)
 {
 	struct GB_NET_HEADER* phdr = (struct GB_NET_HEADER*)hdr;
@@ -124,7 +124,7 @@ void print_message(void * hdr)
 		printf("Unknown type: %d\n", phdr->type);
 	}
 }
-
+*/
 /*
 int main(int argc, char ** argv)
 {

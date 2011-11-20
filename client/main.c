@@ -75,6 +75,11 @@ int main(int argc, char ** argv)
         int ret;
         struct GUI_DATA *gui_data;
         struct GB_LOGIN_REQUEST lg_rq;
+        struct GB_CATALOG_REQUEST ca_rq;
+        struct GB_CATALOG_CHANGE ca_ch;
+        struct GB_START_GAME st_ga;
+        struct GB_QUESTION_REQUEST qu_rq;
+        char cat_name[]="simple.cat"; /**Catalog name for testing*/
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
 
@@ -108,7 +113,7 @@ int main(int argc, char ** argv)
                 strncpy(lg_rq.name, argv[3], 31);
         }
         
-        prepare_message(&lg_rq, TYPE_LR, strlen(argv[3]));
+        prepare_message(&lg_rq, TYPE_LG_RQ, strlen(argv[3]));
         ret = write(sock,&lg_rq,(strlen(argv[3])+sizeof(lg_rq.h)));
         test_return(ret);
         if (ret > 0) {
@@ -126,7 +131,51 @@ int main(int argc, char ** argv)
 	if((pthread_create(&gui_thr, NULL, gui_thread, gui_data))!=0){
 		errorPrint("Error while creating thread: %s", strerror(errno));
         }
-            
+        
+        /**Write CATALOG_REQUEST to server*/
+        
+        prepare_message(&ca_rq, TYPE_CA_RQ, 0);
+        ret = write(sock,&ca_rq,sizeof(ca_rq.h));
+        test_return(ret);
+        if (ret > 0) {
+                infoPrint("Write to socket successful!");
+        }
+        
+        /**Write CATALOG_CHANGE to server*/
+        /**allocate memory to write*/
+        
+        ca_ch.catalog_msg = (char *)malloc(sizeof(cat_name)*sizeof(char));
+        strcpy(ca_ch.catalog_msg,cat_name);
+        infoPrint("send catalog_changed: %s", ca_ch.catalog_msg);
+        prepare_message(&ca_ch, TYPE_CA_CH, strlen(cat_name));
+        ret = write(sock,&ca_ch,(strlen(cat_name)+sizeof(ca_ch.h)));
+        test_return(ret);
+        if (ret > 0) {
+                infoPrint("Write to socket successful!");
+        }
+        
+        
+        /**Write START_GAME to server*/
+        /**allocate memory to write*/
+        /*st_ga.catalog_msg = (char *)malloc(sizeof(cat_name)*sizeof(char));
+        strcpy(st_ga.catalog_msg,cat_name);
+        prepare_message(&st_ga, TYPE_ST_GA, 0);
+        ret = write(sock,&st_ga,strlen(cat_name)+sizeof(st_ga.h));
+        test_return(ret);
+        if (ret > 0) {
+                infoPrint("Write to socket successful!");
+        }
+        */
+        
+        /**Write QUESTION_REQUEST to server*/
+        /*
+        prepare_message(&qu_rq, TYPE_QU_RQ, 0);
+        ret = write(sock,&qu_rq,sizeof(qu_rq.h));
+        test_return(ret);
+        if (ret > 0) {
+                infoPrint("Write to socket successful!");
+        }
+        */
         //Endless loop to avoid closing at the moment
         
         while(1){
