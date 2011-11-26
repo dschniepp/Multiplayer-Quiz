@@ -61,7 +61,9 @@ void* listener_thread(void *param)
         struct GB_CATALOG_RESPONSE ca_rp[11]; //Maximum of 10 catalogs
         struct GB_CATALOG_CHANGE ca_ch;
         struct GB_START_GAME st_ga;
+        struct GB_QUESTION qu;
         struct GB_Error_Warning er_wa;
+        int phase=0; /**The current phase of the game -> 0=preparation; 1=game*/
         int ca_rp_counter=0;
         int z;
         int stdPipe[2]={0,0};
@@ -219,8 +221,15 @@ void* listener_thread(void *param)
                                         if (ret > 0) {
                                                 infoPrint("Client_ID: %d!", pl_li[z].client_id);
                                         }
-                                        preparation_addPlayer(pl_li[z].playername);
-                                z++;
+                                        switch(phase){
+                                                case 0: preparation_addPlayer(pl_li[z].playername);
+                                                        break;
+                                                case 1: 
+                                                        break;
+                                                default:errorPrint("Unknown phase --> neither preparation, nor game");
+                                                        break;
+                                        }                
+                                        z++;
                                 }
                                 break;
                         case TYPE_ST_GA:
@@ -242,7 +251,37 @@ void* listener_thread(void *param)
                                 infoPrint("Server is ready to start the game! (Start_Game Message received)");
                                 preparation_hideWindow();
                                 game_showWindow();
+                                sem_post(&semaphore_main);
                                 break;
+                                
+                        case TYPE_QU:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
+                                infoPrint("Case 9");
+                                
+                                ret = read(li_da->sock, &qu.question, 256);
+                                test_return(ret);
+                                if (ret > 0) {
+                                    infoPrint("Question: %s!", qu.question);
+                                    game_setQuestion(qu.question);
+                                }
+                                z=0;
+                                while(z<4){
+                                    ret = read(li_da->sock, &qu.answer[z], 128);
+                                    test_return(ret);
+                                    if (ret > 0) {
+                                        infoPrint("Answer[%d]: %s!",z+1, qu.answer[z]);
+                                        game_setAnswer(z,qu.answer[z]);
+                                    }
+                                    z++;
+                                }
+                                ret = read(li_da->sock, &qu.time, 2);
+                                test_return(ret);
+                                if (ret > 0) {
+                                    infoPrint("Question: %d!", ntohs(qu.time));
+                                }
+                                
+                                break;
+                                
                         case TYPE_ER_WA:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 255");

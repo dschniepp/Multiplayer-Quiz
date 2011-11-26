@@ -88,7 +88,7 @@ extern "C" {
     struct GB_QUESTION {
         struct GB_NET_HEADER h;
         char question[256];
-        char answer[128][4];
+        char answer[4][128];
         int time;
     };
     

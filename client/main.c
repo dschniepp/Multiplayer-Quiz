@@ -228,14 +228,16 @@ int main(int argc, char ** argv)
         
         
         /**Write QUESTION_REQUEST to server*/
-        /*
+        
         prepare_message(&qu_rq, TYPE_QU_RQ, 0);
         ret = write(sock,&qu_rq,sizeof(qu_rq.h));
         test_return(ret);
         if (ret > 0) {
                 infoPrint("Write to socket successful!");
         }
-        */
+        
+        sem_wait(&semaphore_main);
+        
         //Endless loop to avoid closing at the moment
         
         while(1){
