@@ -15,6 +15,13 @@
 
 #include "common/global.h"
 #include "common/socket.h"
+#include "client/main.h"
+
+static int sock;
+
+int get_socket(void){
+    return sock;
+}
 
 struct GUI_DATA {
 	int argc;
@@ -29,7 +36,14 @@ void* gui_thread(void *param){
     guiInit(&gui_data->argc, &gui_data->argv);
     
         infoPrint("Semaphore UP() -> Wait until GUI Preparations are set");
+        
+        /**Tells socket, that the GUI is started!!!*/
+        
         sem_post(&semaphore_socket);
+
+        /**GUI waits until preparation is finished!!!*/
+        
+        //sem_wait(&semaphore_gui);
     
         //preparation_setMode(PREPARATION_MODE_PRIVILEGED);
     
@@ -41,8 +55,8 @@ void* gui_thread(void *param){
         
         errorPrint("before GUIMain");
         
-        guiMain();       
-    
+        guiMain();              
+        
         errorPrint("GUI runs???");
         
         guiDestroy();
@@ -51,6 +65,9 @@ void* gui_thread(void *param){
     return NULL;
 }
 
+
+
+/*
 void preparation_onCatalogChanged(const char *newSelection){
     infoPrint("preparation_onCatalogChanged");
 }
@@ -70,16 +87,16 @@ void game_onAnswerClicked(int index){
 void game_onWindowClosed(void){
     infoPrint("game_onWindowClosed");    
 }
-
+*/
 
 int main(int argc, char ** argv)
 {
-        int sock;
+
         int ret;
         struct GUI_DATA *gui_data;
         struct GB_LOGIN_REQUEST lg_rq;
         struct GB_CATALOG_REQUEST ca_rq;
-        struct GB_CATALOG_CHANGE ca_ch;
+
         struct GB_START_GAME st_ga;
         struct GB_QUESTION_REQUEST qu_rq;
         
@@ -200,19 +217,7 @@ int main(int argc, char ** argv)
         
         sem_wait(&semaphore_main);
         
-        /**Write CATALOG_CHANGE to server*/
-        /**allocate memory to write*/
-        /*
-        ca_ch.catalog_msg = (char *)malloc(sizeof(cat_name)*sizeof(char));
-        strcpy(ca_ch.catalog_msg,cat_name);
-        infoPrint("send catalog_changed: %s", ca_ch.catalog_msg);
-        prepare_message(&ca_ch, TYPE_CA_CH, strlen(cat_name));
-        ret = write(sock,&ca_ch,(strlen(cat_name)+sizeof(ca_ch.h)));
-        test_return(ret);
-        if (ret > 0) {
-                infoPrint("Write to socket successful!");
-        }
-        */
+        
         
         /**Write START_GAME to server*/
         /**allocate memory to write*/

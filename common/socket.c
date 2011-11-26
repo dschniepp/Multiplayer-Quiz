@@ -134,25 +134,32 @@ void* listener_thread(void *param)
                                 if (ca_rp_counter<10){
                                     if ((ntohs((net_head.size)))!=0){
                                         
-                                        ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
+                                        ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size))+1)*sizeof(char));
                                 
                                         z=0;
+                                        
                                         while (z<((ntohs(net_head.size)))){
                                                 ret = read(li_da->sock, &ca_rp[ca_rp_counter].catalog_msg[z],1);
                                                 z++;
                                         }
+                                        
+                                        ca_rp[ca_rp_counter].catalog_msg[z]='\0';
+                                        
                                         if (ret > 0) {
-                                        errorPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
-                                        preparation_addCatalog(ca_rp[ca_rp_counter].catalog_msg);
+                                                errorPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
+                                                preparation_addCatalog(ca_rp[ca_rp_counter].catalog_msg);
                                         }
-                                        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                        ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
-                                    }else{
-                                        infoPrint("All catalogs read!");
-                                        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                        ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
-                                        preparation_showWindow();
-                                        sem_wait(&semaphore_socket);
+                                                ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                                ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
+                                        }else{
+                                                infoPrint("All catalogs read!");
+                                                ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                                ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
+                                                
+                                                preparation_showWindow();
+                                                //preparation_selectCatalog(ca_rp[0].catalog_msg);
+                                        //sem_post(&semaphore_gui);
+                                        
                                         /*ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
                                         ca_rp[ca_rp_counter].catalog_msg[0]="0";*/
                                     }
@@ -169,17 +176,18 @@ void* listener_thread(void *param)
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 5");
                                 
-                                ca_ch.catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
+                                ca_ch.catalog_msg = (char *)malloc(((ntohs(net_head.size))+1)*sizeof(char));
                                 
                                 z=0;
                                 while (z<(ntohs(net_head.size))){
                                     ret = read(li_da->sock, &ca_ch.catalog_msg[z],1);
-                                    infoPrint("changed cat [%d]: %s", z, ca_ch.catalog_msg);
+                                    //infoPrint("changed cat [%d]: %s", z, ca_ch.catalog_msg);
                                     z++;
                                 }
-                                
+                                ca_ch.catalog_msg[z]='\0';
                                 if (ret > 0) {
                                         errorPrint("Changed Catalog: %s!",ca_ch.catalog_msg);
+                                        preparation_selectCatalog(ca_ch.catalog_msg     );
                                 }
                                 break;
                         case TYPE_PL_LI:
