@@ -12,6 +12,26 @@
 extern "C" {
 #endif
 
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <stdarg.h>
+    #include <string.h>
+    #include <errno.h>
+    #include <sys/time.h>
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+    #include <netdb.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <pthread.h>
+    #include <sys/un.h>
+    #include <signal.h>
+    #include <semaphore.h>
+    #include "common/message.h"
+    #include "common/util.h"
+    #include "client/gui/gui_interface.h"
+   
     #define TYPE_LG_RQ 1
     #define TYPE_LG_RQ_OK 2
     #define TYPE_CA_RQ 3
@@ -90,7 +110,6 @@ extern "C" {
     
     #pragma pack(0)
 
-    
     
 #ifdef	__cplusplus
 }

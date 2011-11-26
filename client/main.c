@@ -9,10 +9,12 @@
 
 #define _POSIX_SOURCE 1
 
-#include "common/socket.h"
-#include "client/gui/gui_interface.h"
-#include "common/message.h"
+//#include "common/socket.h"
+
+//#include "common/message.h"
+
 #include "common/global.h"
+#include "common/socket.h"
 
 struct GUI_DATA {
 	int argc;
@@ -25,16 +27,17 @@ void* gui_thread(void *param){
     gui_data = (struct GUI_DATA*)param;
     
     guiInit(&gui_data->argc, &gui_data->argv);
-        
-        //preparation_addPlayer(argv[3]);
-        
-        preparation_setMode(PREPARATION_MODE_PRIVILEGED);
     
-        preparation_addCatalog("Test.cat"); 
+        infoPrint("Semaphore UP() -> Wait until GUI Preparations are set");
+        sem_post(&semaphore_socket);
     
-        preparation_addPlayer(gui_data->argv[3]);
+        //preparation_setMode(PREPARATION_MODE_PRIVILEGED);
     
-        preparation_showWindow();
+        //preparation_addCatalog("Test.cat"); 
+    
+        //preparation_addPlayer(gui_data->argv[3]);
+    
+        //preparation_showWindow();
         
         errorPrint("before GUIMain");
         
@@ -79,6 +82,10 @@ int main(int argc, char ** argv)
         struct GB_CATALOG_CHANGE ca_ch;
         struct GB_START_GAME st_ga;
         struct GB_QUESTION_REQUEST qu_rq;
+        
+        struct LISTENER_DATA *li_da;
+        char *client_id;
+              
         char cat_name[]="simple.cat"; /**Catalog name for testing*/
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
@@ -98,10 +105,34 @@ int main(int argc, char ** argv)
                 errorPrint("Error while connecting to server");
         }
         
+        /**Initiate new Semaphores*/
+        
+        if(init_semaphore(semaphore_main) == -1)
+	{
+                errorPrint("Error while initiating semaphore %s", strerror(errno));
+		return 1;
+	}
+        
+        if(init_semaphore(semaphore_gui) == -1)
+	{
+                errorPrint("Error while initiating semaphore %s", strerror(errno));
+		return 1;
+	}
+        
+        if(init_semaphore(semaphore_socket) == -1)
+	{
+                errorPrint("Error while initiating semaphore %s", strerror(errno));
+		return 1;
+	}
+        
         /**Start the Listener-Thread*/
-
+        
+        li_da = (struct LISTENER_DATA*)malloc(sizeof(struct LISTENER_DATA));
+        
+        li_da->sock=sock;
+        li_da->pipeID=0;                
 	pthread_t listener_thr;
-	if((pthread_create(&listener_thr, NULL, listener_thread, (void*)sock))!=0){
+	if((pthread_create(&listener_thr, NULL, listener_thread, li_da))!=0){
 		errorPrint("Error while creating thread: %s", strerror(errno));
         }
         
@@ -119,7 +150,31 @@ int main(int argc, char ** argv)
         if (ret > 0) {
                 infoPrint("Write to socket successful!");
         }      
-    
+        
+        /**Wait for Server to send Login_Response_OK, before starting the GUI*/
+        sem_wait(&semaphore_main);
+        infoPrint("Semaphore DOWN()");
+        
+        infoPrint("PIPE-ID from Main= %d",li_da->pipeID);
+        
+        /*if(pipe(li_da->pipeID)==-1){
+                errorPrint("Error, while creating stdinPipe");
+        }*/
+        /*
+        int n=1;
+        int z=0;
+        char *output;
+        output = (char *)malloc((n+1)*(sizeof(char)));
+        while(z<n){
+                read(*li_da->pipeID, &output[z], 1);
+        z++;
+        }
+        output[z]=0;
+        infoPrint("Anzahl: %d", n);
+        infoPrint("Read Pipe: %s!", output);
+        */
+        //infoPrint("Read from Pipe, client-id: %s",client_id);
+        
         /*Start the GUI-Thread*/
                         
         gui_data = (struct GUI_DATA*)malloc(sizeof(struct GUI_DATA));
@@ -132,6 +187,8 @@ int main(int argc, char ** argv)
 		errorPrint("Error while creating thread: %s", strerror(errno));
         }
         
+        
+        
         /**Write CATALOG_REQUEST to server*/
         
         prepare_message(&ca_rq, TYPE_CA_RQ, 0);
@@ -141,9 +198,11 @@ int main(int argc, char ** argv)
                 infoPrint("Write to socket successful!");
         }
         
+        sem_wait(&semaphore_main);
+        
         /**Write CATALOG_CHANGE to server*/
         /**allocate memory to write*/
-        
+        /*
         ca_ch.catalog_msg = (char *)malloc(sizeof(cat_name)*sizeof(char));
         strcpy(ca_ch.catalog_msg,cat_name);
         infoPrint("send catalog_changed: %s", ca_ch.catalog_msg);
@@ -153,7 +212,7 @@ int main(int argc, char ** argv)
         if (ret > 0) {
                 infoPrint("Write to socket successful!");
         }
-        
+        */
         
         /**Write START_GAME to server*/
         /**allocate memory to write*/

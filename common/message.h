@@ -12,12 +12,12 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <arpa/inet.h>
-#include "global.h"  
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <stdint.h>
+//#include <arpa/inet.h>
+ 
     
     //void write_message(int sock, int type);
     void prepare_message(void * hdr, int type, int size);

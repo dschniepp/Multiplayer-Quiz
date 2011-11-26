@@ -18,11 +18,11 @@ GTK_LIBS = `pkg-config gtk+-2.0 --libs` `pkg-config gthread-2.0 --libs`
 
 LOADER_OBJECTS = loader/main.o loader/browse.o loader/load.o loader/parser.o common/util.o
 
-SERVER_OBJECTS = server/main.o common/util.o common/socket.o common/message.o	# Liste der Server-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
+#SERVER_OBJECTS = server/main.o common/util.o common/message.o	# Liste der Server-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
 
-CLIENT_OBJECTS = client/main.o common/util.o common/socket.o common/message.o	# Liste der Client-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
+CLIENT_OBJECTS = client/main.o common/util.o common/socket.o common/message.o client/gui/gui_interface.o	# Liste der Client-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
 
-TARGETS = bin/loader bin/server bin/client
+TARGETS = bin/loader bin/client #bin/server 
 
 
 ####################################################################
@@ -53,16 +53,19 @@ mrproper:	clean
 # $<: Dateiname der ersten Abhängigkeit
 #
 
-loader/%.o: loader/%.c
-	gcc $(COPTS) -Iloader -o $@ $<
+#loader/%.o: loader/%.c
+	#gcc $(COPTS) -Iloader -o $@ $<
 
-server/%.o: server/%.c
-	gcc $(COPTS) -Iserver -o $@ $<
+#server/%.o: server/%.c
+	#gcc $(COPTS) -Iserver -o $@ $<
 
 client/%.o: client/%.c
 	gcc $(COPTS) -Iclient -o $@ $<
 
 common/%.o: common/%.c
+	gcc $(COPTS) -o $@ $<
+	
+client/gui/%.o: client/gui/%.c
 	gcc $(COPTS) -o $@ $<
 
 ####################################################################
@@ -73,11 +76,11 @@ common/%.o: common/%.c
 # $+: Liste aller Abhängigkeiten
 #
 
-bin/loader:	$(LOADER_OBJECTS)
-	gcc -o $@ $+ -lrt
+#bin/loader:	$(LOADER_OBJECTS)
+#	gcc -o $@ $+ -lrt
 
-bin/server:	$(SERVER_OBJECTS)
-	gcc -o $@ $+ -lpthread -lrt
+#bin/server:	$(SERVER_OBJECTS)
+#	gcc -o $@ $+ -lpthread -lrt
 
 # For 32-bit Version
 
@@ -94,9 +97,10 @@ bin/client:	$(CLIENT_OBJECTS) client/gui/libquizgui32.a
 #
 # Gemeinsam verwendete Objektdateien
 #
-common/util.o:	common/util.c common/util.h  
-common/socket.o: common/socket.c common/socket.h
+common/util.o:	common/util.c common/util.h
+common/socket.o: common/socket.c common/socket.h 
 common/message.o: common/message.c common/message.h
+client/gui/gui_interface.o: client/gui/gui_interface.c client/gui/gui_interface.h
 # Hier weitere gemeinsam verwendete Module eintragen!
 
 ###################################################################
@@ -104,13 +108,13 @@ common/message.o: common/message.c common/message.h
 #
 # Objektdateien des Loaders
 #
-loader/main.o:		loader/main.c loader/browse.h common/util.h common/server_loader_protocol.h common/socket.h common/message.h
+#loader/main.o:		loader/main.c loader/browse.h common/util.h common/server_loader_protocol.h common/socket.h common/message.h
 
-loader/browse.o:	loader/browse.c loader/browse.h common/util.h common/socket.h common/message.h
+#loader/browse.o:	loader/browse.c loader/browse.h common/util.h common/socket.h common/message.h
 
-loader/load.o:		loader/load.c loader/load.h loader/parser.h common/server_loader_protocol.h common/question.h common/util.h
+#loader/load.o:		loader/load.c loader/load.h loader/parser.h common/server_loader_protocol.h common/question.h common/util.h
 
-loader/parser.o:	loader/parser.c loader/parser.h common/question.h
+#loader/parser.o:	loader/parser.c loader/parser.h common/question.h
 
 ##################################################################
 
@@ -119,7 +123,7 @@ loader/parser.o:	loader/parser.c loader/parser.h common/question.h
 #
 
 # Hier Abhängigkeiten der Server-Module eintragen!
-server/main.o:		server/main.c common/util.h common/socket.h common/message.h
+#server/main.o:		server/main.c common/util.h common/message.h
 
 #################################################################
 
@@ -128,4 +132,5 @@ server/main.o:		server/main.c common/util.h common/socket.h common/message.h
 #
 
 # Hier Abhängigkeiten der Client-Module eintragen!
-client/main.o:		client/main.c common/util.h common/socket.h common/message.h
+client/main.o:		client/main.c common/util.h common/socket.h common/message.h client/gui/gui_interface.h
+    

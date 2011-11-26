@@ -9,6 +9,7 @@
 #define _POSIX_SOURCE 1
 
 #include "common/socket.h"
+#include "common/global.h"
 
 /**
  * struct to pass custom data to echo_thread

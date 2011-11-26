@@ -1,31 +1,28 @@
 /* socket.h für Linux/UNIX */
-#ifndef ALL_SOCKET_H_
-#define ALL_SOCKET_H_
+#ifndef SOCKET_H
+#define	SOCKET_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include "common/util.h"
-#include <pthread.h>
-#include <sys/un.h>
-#include "common/message.h"
-#include "common/global.h" 
+//#include "client/main.h"
 
+struct LISTENER_DATA {
+	int sock;
+        int pipeID;
+};
+
+#include <semaphore.h>
+
+sem_t semaphore_main;
+sem_t semaphore_gui;
+sem_t semaphore_socket;
 
 /*--------------Client Functions---------------------*/
 
+int init_semaphore(sem_t semaphore);
 void connect_socket_client(int *sock, char serv_addr[], char port[]);
 void close_socket_client( int sock );
 void* listener_thread(void *param);
 void test_return(int ret);
+void read_pipe_client(int n);
 
 /*--------------Server Functions---------------------*/
 

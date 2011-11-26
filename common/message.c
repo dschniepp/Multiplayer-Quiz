@@ -1,5 +1,5 @@
+#include "global.h" 
 #include "common/message.h"
-#include "common/socket.h"
 /*
 #define NET_TYPE_MESSAGE 1
 
