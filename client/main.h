@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 int get_socket(void);
-
+int get_guiruns(void);
 
 #ifdef	__cplusplus
 }

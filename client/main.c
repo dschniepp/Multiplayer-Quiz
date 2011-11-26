@@ -17,10 +17,14 @@
 #include "common/socket.h"
 #include "client/main.h"
 
-static int sock;
+static int sock=0;
+static int gui_runs=0;
 
 int get_socket(void){
     return sock;
+}
+int get_guiruns(void){
+    return gui_runs;
 }
 
 struct GUI_DATA {
@@ -38,9 +42,12 @@ void* gui_thread(void *param){
         infoPrint("Semaphore UP() -> Wait until GUI Preparations are set");
         
         /**Tells socket, that the GUI is started!!!*/
-        
+                
         sem_post(&semaphore_socket);
-
+        
+        /**Set module global variable --> Only for error message, needed (For the case, that the GUI isn't started, yet.*/
+        gui_runs=1;
+        
         /**GUI waits until preparation is finished!!!*/
         
         //sem_wait(&semaphore_gui);
@@ -97,7 +104,6 @@ int main(int argc, char ** argv)
         struct GB_LOGIN_REQUEST lg_rq;
         struct GB_CATALOG_REQUEST ca_rq;
 
-        struct GB_START_GAME st_ga;
         struct GB_QUESTION_REQUEST qu_rq;
         
         struct LISTENER_DATA *li_da;
@@ -219,17 +225,7 @@ int main(int argc, char ** argv)
         
         
         
-        /**Write START_GAME to server*/
-        /**allocate memory to write*/
-        /*st_ga.catalog_msg = (char *)malloc(sizeof(cat_name)*sizeof(char));
-        strcpy(st_ga.catalog_msg,cat_name);
-        prepare_message(&st_ga, TYPE_ST_GA, 0);
-        ret = write(sock,&st_ga,strlen(cat_name)+sizeof(st_ga.h));
-        test_return(ret);
-        if (ret > 0) {
-                infoPrint("Write to socket successful!");
-        }
-        */
+        
         
         /**Write QUESTION_REQUEST to server*/
         /*

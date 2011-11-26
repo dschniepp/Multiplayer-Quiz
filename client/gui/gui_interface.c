@@ -31,6 +31,33 @@ void preparation_onCatalogChanged(const char *newSelection){
 
 void preparation_onStartClicked(const char *currentSelection){
     
+    
+    struct GB_START_GAME st_ga;
+    int ret=0;
+    
+    
+        /**allocate memory to write*/
+    
+        st_ga.catalog_msg = (char *)malloc(sizeof(currentSelection)*sizeof(char));
+        
+        //strcpy(ca_ch.catalog_msg,*newSelection);
+        /**Make sure that string is Null terminated!!!*/
+        
+        /*strcpy(ca_ch.catalog_msg,currentSelection);
+        int i=strlen(currentSelection);
+        currentSelection[i]='\0';*/
+    
+        /**Write START_GAME to server*/
+        
+        infoPrint("send catalog_changed: %s", currentSelection);
+        prepare_message(&st_ga.h, TYPE_ST_GA, strlen(currentSelection));
+        ret = write(get_socket(),&st_ga.h,sizeof(st_ga.h));
+        ret = write(get_socket(),currentSelection,strlen(currentSelection));
+        test_return(ret);
+        if (ret > 0) {
+                infoPrint("Write to socket successful!");
+        } 
+    
 }
 
 void preparation_onWindowClosed(void){

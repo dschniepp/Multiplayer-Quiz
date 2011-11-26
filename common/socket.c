@@ -2,6 +2,7 @@
 #include "common/socket.h"
 #include "common/global.h"
 #include "client/gui/gui_interface.h"
+#include "client/main.h"
 
 //static int stdPipe[2];
 /**--------------Client Functions---------------------*/
@@ -194,6 +195,12 @@ void* listener_thread(void *param)
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 6");
                                 
+                                /**Clear the Playerlist*/
+                                
+                                preparation_clearPlayers();
+                                
+                                /**Read the Playerlist from the socket and show it in the GUI*/
+                                
                                 z=0;
                                 while (z<((ntohs((net_head.size)))/37)){
                                 
@@ -227,6 +234,7 @@ void* listener_thread(void *param)
                                                 ret = read(li_da->sock, &st_ga.catalog_msg[z],1);
                                                 z++;
                                         }
+                                        st_ga.catalog_msg[z]='\0';
                                         if (ret > 0) {
                                         errorPrint("Start_Game Message: %s!",st_ga.catalog_msg);
                                         }
@@ -253,14 +261,32 @@ void* listener_thread(void *param)
                                     ret = read(li_da->sock, &er_wa.error_msg[z],1);
                                     z++;
                                 }
-
+                                er_wa.error_msg[z]='\0';
                                 
                                 //ret = read(sock, &er_wa.error_msg,((ntohs(net_head.size))-1));
                                 
                                 if (ret > 0) {
-                                        errorPrint("Error: %s!", er_wa.error_msg);
+                                        
+                                    switch(er_wa.msg_type){
+                                        
+                                        case 0: guiShowMessageDialog(er_wa.error_msg, 0);
+                                                break;
+                                        case 1: if (get_guiruns()!=0){
+                                                        guiShowErrorDialog(er_wa.error_msg, 0);
+                                                        exit(0);
+                                                }else{
+                                                        errorPrint("Error: %s!", er_wa.error_msg);
+                                                        exit(0);
+                                                }
+                                                break;
+                                        default:
+                                                errorPrint("Error: Unknown case, while printing error/warning message!!!");
+                                                break;
+                                        
+                                    }
+                                    
+                                        //errorPrint("Error: %s!", er_wa.error_msg);
                                 }
-                                exit(0);
                                 break;
                             
                         default:
