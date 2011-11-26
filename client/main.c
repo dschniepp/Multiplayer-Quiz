@@ -67,8 +67,8 @@ void* gui_thread(void *param){
         errorPrint("GUI runs???");
         
         guiDestroy();
-    
-    pthread_exit(0);
+            
+    exit(0);
     return NULL;
 }
 

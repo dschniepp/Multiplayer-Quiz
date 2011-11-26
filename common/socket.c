@@ -238,9 +238,10 @@ void* listener_thread(void *param)
                                         if (ret > 0) {
                                         errorPrint("Start_Game Message: %s!",st_ga.catalog_msg);
                                         }
-                                }else{
-                                        infoPrint("Server is ready to start the game! (Start_Game Message received)");
-                                }                                
+                                }       
+                                infoPrint("Server is ready to start the game! (Start_Game Message received)");
+                                preparation_hideWindow();
+                                game_showWindow();
                                 break;
                         case TYPE_ER_WA:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
@@ -272,8 +273,7 @@ void* listener_thread(void *param)
                                         case 0: guiShowMessageDialog(er_wa.error_msg, 0);
                                                 break;
                                         case 1: if (get_guiruns()!=0){
-                                                        guiShowErrorDialog(er_wa.error_msg, 0);
-                                                        exit(0);
+                                                        guiShowErrorDialog(er_wa.error_msg, 1);
                                                 }else{
                                                         errorPrint("Error: %s!", er_wa.error_msg);
                                                         exit(0);
