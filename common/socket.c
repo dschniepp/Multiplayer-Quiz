@@ -3,6 +3,7 @@
 #include "common/global.h"
 #include "client/gui/gui_interface.h"
 #include "client/main.h"
+#include <unistd.h>
 
 //static int stdPipe[2];
 /**--------------Client Functions---------------------*/
@@ -45,6 +46,25 @@ void test_return(int ret){
 	}
 }
 
+void* question_thread(){
+       
+    struct GB_QUESTION_REQUEST qu_rq;
+    int ret=0;
+    
+    /**Write QUESTION_REQUEST to server*/
+        
+    prepare_message(&qu_rq, TYPE_QU_RQ, 0);
+    ret = write(get_socket(),&qu_rq,sizeof(qu_rq.h));
+    test_return(ret);
+    if (ret > 0) {
+        infoPrint("Write to socket successful!");
+    }
+    sleep(4);
+    sem_post(&semaphore_socket);
+    pthread_exit(0);
+    return NULL;
+}
+
 /**Listener-Thread client*/
 
 void* listener_thread(void *param)
@@ -62,10 +82,15 @@ void* listener_thread(void *param)
         struct GB_CATALOG_CHANGE ca_ch;
         struct GB_START_GAME st_ga;
         struct GB_QUESTION qu;
+        struct GB_QUESTION_RESULT qu_re;
+        struct GB_GAME_OVER ga_ov;
         struct GB_Error_Warning er_wa;
+        
+        pthread_t question_thr;
         int phase=0; /**The current phase of the game -> 0=preparation; 1=game*/
         int ca_rp_counter=0;
         int z;
+        
         int stdPipe[2]={0,0};
         //int t=0;
        
@@ -214,7 +239,7 @@ void* listener_thread(void *param)
                                         ret = read(li_da->sock, &pl_li[z].score, 4);
                                         test_return(ret);
                                         if (ret > 0) {
-                                                infoPrint("score: %d!", ntohs(pl_li[z].score));
+                                                infoPrint("score: %d!", ntohl(pl_li[z].score));
                                         }
                                         ret = read(li_da->sock, &pl_li[z].client_id, 1);
                                         test_return(ret);
@@ -224,7 +249,11 @@ void* listener_thread(void *param)
                                         switch(phase){
                                                 case 0: preparation_addPlayer(pl_li[z].playername);
                                                         break;
-                                                case 1: 
+                                                case 1: game_setPlayerName(z+1,pl_li[z].playername);
+                                                        game_setPlayerScore(z+1,ntohl(pl_li[z].score));
+                                                        if(lg_rs_ok.client_id==pl_li[z].client_id){
+                                                            game_highlightPlayer(z+1);
+                                                        }
                                                         break;
                                                 default:errorPrint("Unknown phase --> neither preparation, nor game");
                                                         break;
@@ -250,6 +279,7 @@ void* listener_thread(void *param)
                                 }       
                                 infoPrint("Server is ready to start the game! (Start_Game Message received)");
                                 preparation_hideWindow();
+                                phase=1;
                                 game_showWindow();
                                 sem_post(&semaphore_main);
                                 break;
@@ -257,29 +287,109 @@ void* listener_thread(void *param)
                         case TYPE_QU:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 9");
+                                if ((ntohs(net_head.size))!=0){
+                                        ret = read(li_da->sock, &qu.question, 256);
+                                        test_return(ret);
+                                        if (ret > 0) {
+                                        infoPrint("Question: %s!", qu.question);
+                                        game_setQuestion(qu.question);
+                                        }
+                                        z=0;
+                                        while(z<4){
+                                                ret = read(li_da->sock, &qu.answer[z], 128);
+                                                test_return(ret);
+                                                if (ret > 0) {
+                                                        infoPrint("Answer[%d]: %s!",z+1, qu.answer[z]);
+                                                        game_setAnswer(z,qu.answer[z]);
+                                                }
+                                                z++;
+                                        }
+                                        ret = read(li_da->sock, &qu.time, 2);
+                                        test_return(ret);
+                                        if (ret > 0) {
+                                                infoPrint("Question: %d!", ntohs(qu.time));
+                                        }
+                                        game_setStatusIcon(STATUS_ICON_NONE);
+                                        game_setStatusText("");
+                                        game_unmarkAnswers();
+                                        game_setAnswerButtonsEnabled(1);
+                                }else{
+                                    /**No more questions left!!!*/
+                                    infoPrint("No more questions left!!!");
+                                    game_hideWindow();
+                                }
+                                break;
                                 
-                                ret = read(li_da->sock, &qu.question, 256);
+                        case TYPE_QU_RE:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
+                                infoPrint("Case 11");
+                                
+                                ret = read(li_da->sock, &qu_re.answer, 1);
                                 test_return(ret);
                                 if (ret > 0) {
-                                    infoPrint("Question: %s!", qu.question);
-                                    game_setQuestion(qu.question);
+                                    infoPrint("Answer was: %d!", qu_re.answer);
                                 }
-                                z=0;
-                                while(z<4){
-                                    ret = read(li_da->sock, &qu.answer[z], 128);
-                                    test_return(ret);
-                                    if (ret > 0) {
-                                        infoPrint("Answer[%d]: %s!",z+1, qu.answer[z]);
-                                        game_setAnswer(z,qu.answer[z]);
+                                ret = read(li_da->sock, &qu_re.correct, 1);
+                                test_return(ret);
+                                if (ret > 0) {
+                                    infoPrint("Correct answer is: %d!", qu_re.correct);
+                                }
+                                if (qu_re.answer!=255){
+                                    if(qu_re.answer!=qu_re.correct){
+                                        game_markAnswerWrong(qu_re.answer);
+                                        game_setStatusText("Die Antwort war falsch!");
+                                        game_setStatusIcon(STATUS_ICON_WRONG);
+                                    }else{
+                                        game_markAnswerCorrect(qu_re.answer);
+                                        game_setStatusText("Die Antwort war richtig!");
+                                        game_setStatusIcon(STATUS_ICON_CORRECT);
                                     }
-                                    z++;
+                                    
+                                }else{
+                                    game_setStatusText("Die Zeit ist leider abgelaufen!");
+                                    game_setStatusIcon(STATUS_ICON_TIMEOUT);
                                 }
-                                ret = read(li_da->sock, &qu.time, 2);
+                                game_setAnswerButtonsEnabled(0);
+                                
+                                
+                                if((pthread_create(&question_thr, NULL, question_thread, NULL))!=0){
+                                        errorPrint("Error while creating question change thread: %s", strerror(errno));
+                                }
+                                sem_wait(&semaphore_socket);
+                                break;
+                        
+                        case TYPE_GA_OV:
+                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
+                                infoPrint("Case 12");
+                                
+                                ret = read(li_da->sock, &ga_ov.rank, 1);
                                 test_return(ret);
                                 if (ret > 0) {
-                                    infoPrint("Question: %d!", ntohs(qu.time));
+                                    infoPrint("Rank: %d!", ga_ov.rank);
                                 }
+                                /*
+                                char textpart1[]="Glückwunsch Sie haben den ";
+                                char textpart2[]=" Platz belegt!";
                                 
+                                //ca_ch.catalog_msg = (char *)malloc(((ntohs(net_head.size))+1)*sizeof(char));
+                                
+                                char *rank = (char *)malloc(sizeof(uint8_t));
+ 
+                                memcpy(rank, &ga_ov.rank, sizeof(int) );
+
+                                strncat(textpart1,rank,1);
+                                strncat(textpart1,textpart2,14);
+ 
+                                // ints senden und am Ende freigeben
+ 
+                                free(rank);
+                                */
+                                char message[50];
+                                sprintf(message,"Glueckwusch Sie haben den %dten Platz belegt!",ga_ov.rank);
+                                infoPrint("Message: %s",message);
+                                guiShowMessageDialog(message, 1);
+                                sem_wait(&semaphore_socket);
+                                //exit(0);
                                 break;
                                 
                         case TYPE_ER_WA:

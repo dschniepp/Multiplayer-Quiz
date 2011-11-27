@@ -76,6 +76,13 @@ extern "C" {
         char *catalog_msg;
     };
     
+    struct GB_Player_List{
+        struct GB_NET_HEADER h;
+        char playername[32];
+        unsigned long score;
+        uint8_t client_id;
+    };
+    
     struct GB_START_GAME {
         struct GB_NET_HEADER h;
         char *catalog_msg;
@@ -92,13 +99,20 @@ extern "C" {
         int time;
     };
     
-    
-    
-    struct GB_Player_List{
+    struct GB_QUESTION_ANSWERED {
         struct GB_NET_HEADER h;
-        char playername[32];
-        unsigned int score;
-        uint8_t client_id;
+        uint8_t answer;
+    };
+    
+    struct GB_QUESTION_RESULT {
+        struct GB_NET_HEADER h;
+        uint8_t answer;
+        uint8_t correct;                
+    };
+    
+    struct GB_GAME_OVER {
+        struct GB_NET_HEADER h;
+        uint8_t rank;
     };
     
     struct GB_Error_Warning{

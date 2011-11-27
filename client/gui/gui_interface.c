@@ -65,9 +65,21 @@ void preparation_onWindowClosed(void){
 }
 
 void game_onAnswerClicked(int index){
+    /**Send the answer to the server!*/
     
+    struct GB_QUESTION_ANSWERED qu_an;
+    int ret=0;
+    
+    qu_an.answer=(uint8_t)index;
+    
+    prepare_message(&qu_an, TYPE_QU_AN, 1);
+        ret = write(get_socket(),&qu_an,1+sizeof(qu_an.h));
+        test_return(ret);
+        if (ret > 0) {
+                infoPrint("Write to socket successful!");
+        }     
 }
 
 void game_onWindowClosed(void){
-    
+    guiShowMessageDialog("You closed the Game!!!", 1);
 } 
