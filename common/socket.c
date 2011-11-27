@@ -5,10 +5,23 @@
 #include "client/main.h"
 #include <unistd.h>
 
+static pthread_t question_thr;
 //static int stdPipe[2];
 /**--------------Client Functions---------------------*/
 
 /**----External Functions*/
+
+void close_prozess(){
+    infoPrint("Before destroying of semaphores!!!");
+    sem_destroy(&semaphore_main);
+    sem_destroy(&semaphore_socket);
+    close(get_socket());
+    pthread_detach(question_thr);
+    pthread_detach(get_liThread());
+    pthread_detach(get_guiThread());
+    infoPrint("Before exit!!!");
+    exit(0);
+}
 
 int init_semaphore(sem_t semaphore){
 
@@ -25,6 +38,12 @@ return 0;
 void test_return(int ret){
     	if (ret == 0) {
 		errorPrint("Connection closed while trying to read/write");
+                if (get_guiruns()!=0){
+                        guiShowErrorDialog("Fehler: Die Verbindung zum Server wurde getrennt!", 1);
+                }else{
+                        errorPrint("Fehler: Die Verbindung zum Server wurde getrennt!");
+                        close_prozess();
+                }
 	}
 	if (ret < 0) {
 		errorPrint("Cannot read from/write to socket: %s", strerror(errno));		
@@ -67,7 +86,7 @@ void* listener_thread()
         struct GB_GAME_OVER ga_ov;
         struct GB_Error_Warning er_wa;
         
-        pthread_t question_thr;
+        
         
         int phase=0; /**The current phase of the game -> 0=preparation; 1=game*/
         int ca_rp_counter=0; /**Counts the number of loaded catalogs --> Maximum=10*/
@@ -126,6 +145,7 @@ void* listener_thread()
                                                 if (ret > 0) {
                                                         infoPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
                                                         preparation_addCatalog(ca_rp[ca_rp_counter].catalog_msg);
+                                                        free(ca_rp[ca_rp_counter].catalog_msg);
                                                 }
                                                         ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
                                                         ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
@@ -142,6 +162,7 @@ void* listener_thread()
                                                 errorPrint("Error: You can not show more then 10 catalogs!");
                                         }   
                                 }
+                                
                                 ca_rp_counter++;
                                 break;
                                 
@@ -163,6 +184,7 @@ void* listener_thread()
                                         errorPrint("Changed Catalog: %s!",ca_ch.catalog_msg);
                                         preparation_selectCatalog(ca_ch.catalog_msg     );
                                 }
+                                free(ca_ch.catalog_msg);
                                 break;
                         case TYPE_PL_LI:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
@@ -220,8 +242,9 @@ void* listener_thread()
                                         }
                                         st_ga.catalog_msg[z]='\0';
                                         if (ret > 0) {
-                                        errorPrint("Start_Game Message: %s!",st_ga.catalog_msg);
+                                                infoPrint("Start_Game Message: %s!",st_ga.catalog_msg);
                                         }
+                                        free(st_ga.catalog_msg);
                                 }       
                                 infoPrint("Server is ready to start the game! (Start_Game Message received)");
                                 preparation_hideWindow();
@@ -368,12 +391,16 @@ void* listener_thread()
                                     switch(er_wa.msg_type){
                                         
                                         case 0: guiShowMessageDialog(er_wa.error_msg, 0);
+                                                free(er_wa.error_msg);
                                                 break;
                                         case 1: if (get_guiruns()!=0){
                                                         guiShowErrorDialog(er_wa.error_msg, 1);
+                                                        free(er_wa.error_msg);
+                                                        sem_wait(&semaphore_socket);
                                                 }else{
                                                         errorPrint("Error: %s!", er_wa.error_msg);
-                                                        exit(0);
+                                                        free(er_wa.error_msg);
+                                                        close_prozess();
                                                 }
                                                 break;
                                         default:

@@ -21,6 +21,8 @@
 
 static int sock=0;
 static int gui_runs=0;
+static pthread_t listener_thr;
+static pthread_t gui_thr;
 
 struct GUI_DATA {
 	int argc;
@@ -28,6 +30,14 @@ struct GUI_DATA {
 };
 
 /**Get and set functions*/
+
+pthread_t get_liThread(){
+    return listener_thr;
+}
+
+pthread_t get_guiThread(){
+    return gui_thr;
+}
 
 int get_socket(void){
     return sock;
@@ -40,10 +50,10 @@ int get_guiruns(void){
 
 void* gui_thread(void *param){
     
-    struct GUI_DATA * gui_data;
-    gui_data = (struct GUI_DATA*)param;
+        struct GUI_DATA * gui_data;
+        gui_data = (struct GUI_DATA*)param;
     
-    guiInit(&gui_data->argc, &gui_data->argv);
+        guiInit(&gui_data->argc, &gui_data->argv);
     
         infoPrint("GUI-Thread is started --> Socket can use functions!");
         
@@ -61,8 +71,11 @@ void* gui_thread(void *param){
         guiDestroy();
         
         free(gui_data);
+    
+        close_prozess();
         
-    exit(0);
+        pthread_exit(0);    
+    //exit(0);
     return NULL;
 }
 
@@ -77,8 +90,7 @@ int main(int argc, char ** argv)
         struct GB_CATALOG_REQUEST ca_rq;
         struct GB_QUESTION_REQUEST qu_rq;
         
-        pthread_t listener_thr;
-        pthread_t gui_thr;
+
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
 

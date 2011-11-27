@@ -61,7 +61,7 @@ void preparation_onStartClicked(const char *currentSelection){
 }
 
 void preparation_onWindowClosed(void){
-    guiShowMessageDialog("You closed the Game!!!", 1);
+    guiShowMessageDialog("Sie haben das Spiel beendet!!!", 1);
 }
 
 void game_onAnswerClicked(int index){
@@ -81,5 +81,5 @@ void game_onAnswerClicked(int index){
 }
 
 void game_onWindowClosed(void){
-    guiShowMessageDialog("You closed the Game!!!", 1);
+    guiShowMessageDialog("Sie haben das Spiel beendet!!!", 1);
 } 

@@ -15,7 +15,7 @@ sem_t semaphore_main;
 sem_t semaphore_socket;
 
 /*--------------Client Functions---------------------*/
-
+void close_prozess();
 int init_semaphore(sem_t semaphore);
 void connect_socket_client(int *sock, char serv_addr[], char port[]);
 void close_socket_client( int sock );
