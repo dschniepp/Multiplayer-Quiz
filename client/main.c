@@ -17,8 +17,17 @@
 #include "common/socket.h"
 #include "client/main.h"
 
+/**Module global variables*/
+
 static int sock=0;
 static int gui_runs=0;
+
+struct GUI_DATA {
+	int argc;
+        char ** argv;
+};
+
+/**Get and set functions*/
 
 int get_socket(void){
     return sock;
@@ -27,10 +36,7 @@ int get_guiruns(void){
     return gui_runs;
 }
 
-struct GUI_DATA {
-	int argc;
-        char ** argv;
-};
+/**GUI-Thread*/
 
 void* gui_thread(void *param){
     
@@ -39,77 +45,40 @@ void* gui_thread(void *param){
     
     guiInit(&gui_data->argc, &gui_data->argv);
     
-        infoPrint("Semaphore UP() -> Wait until GUI Preparations are set");
+        infoPrint("GUI-Thread is started --> Socket can use functions!");
         
-        /**Tells socket, that the GUI is started!!!*/
-                
+        /**GUI is initiated -> Listener-Thread can move on!!!!*/  
         sem_post(&semaphore_socket);
         
         /**Set module global variable --> Only for error message, needed (For the case, that the GUI isn't started, yet.*/
         gui_runs=1;
         
-        /**GUI waits until preparation is finished!!!*/
-        
-        //sem_wait(&semaphore_gui);
-    
-        //preparation_setMode(PREPARATION_MODE_PRIVILEGED);
-    
-        //preparation_addCatalog("Test.cat"); 
-    
-        //preparation_addPlayer(gui_data->argv[3]);
-    
-        //preparation_showWindow();
-        
-        errorPrint("before GUIMain");
-        
+        /**Start GUI Main*/
         guiMain();              
         
-        errorPrint("GUI runs???");
+        infoPrint("Destroy the GUI!!!");
         
         guiDestroy();
-            
+        
+        free(gui_data);
+        
     exit(0);
     return NULL;
 }
 
-
-
-/*
-void preparation_onCatalogChanged(const char *newSelection){
-    infoPrint("preparation_onCatalogChanged");
-}
-
-void preparation_onStartClicked(const char *currentSelection){
-    infoPrint("preparation_onStartClicked");
-}
-
-void preparation_onWindowClosed(void){
-    infoPrint("preparation_onWindowClosed");    
-}
-
-void game_onAnswerClicked(int index){
-    infoPrint("game_onAnswerClicked");    
-}
-
-void game_onWindowClosed(void){
-    infoPrint("game_onWindowClosed");    
-}
-*/
+/**Main Function - Command-Thread*/
 
 int main(int argc, char ** argv)
 {
-
-        int ret;
+        int ret=0;
+        
         struct GUI_DATA *gui_data;
         struct GB_LOGIN_REQUEST lg_rq;
         struct GB_CATALOG_REQUEST ca_rq;
-
         struct GB_QUESTION_REQUEST qu_rq;
         
-        struct LISTENER_DATA *li_da;
-        char *client_id;
-              
-        char cat_name[]="simple.cat"; /**Catalog name for testing*/
+        pthread_t listener_thr;
+        pthread_t gui_thr;
    
 	setProgName(argv[0]);	/* For infoPrint/errorPrint */
 
@@ -136,12 +105,6 @@ int main(int argc, char ** argv)
 		return 1;
 	}
         
-        if(init_semaphore(semaphore_gui) == -1)
-	{
-                errorPrint("Error while initiating semaphore %s", strerror(errno));
-		return 1;
-	}
-        
         if(init_semaphore(semaphore_socket) == -1)
 	{
                 errorPrint("Error while initiating semaphore %s", strerror(errno));
@@ -149,13 +112,8 @@ int main(int argc, char ** argv)
 	}
         
         /**Start the Listener-Thread*/
-        
-        li_da = (struct LISTENER_DATA*)malloc(sizeof(struct LISTENER_DATA));
-        
-        li_da->sock=sock;
-        li_da->pipeID=0;                
-	pthread_t listener_thr;
-	if((pthread_create(&listener_thr, NULL, listener_thread, li_da))!=0){
+                     
+	if((pthread_create(&listener_thr, NULL, listener_thread, NULL))!=0){
 		errorPrint("Error while creating thread: %s", strerror(errno));
         }
         
@@ -176,27 +134,8 @@ int main(int argc, char ** argv)
         
         /**Wait for Server to send Login_Response_OK, before starting the GUI*/
         sem_wait(&semaphore_main);
-        infoPrint("Semaphore DOWN()");
         
-        infoPrint("PIPE-ID from Main= %d",li_da->pipeID);
-        
-        /*if(pipe(li_da->pipeID)==-1){
-                errorPrint("Error, while creating stdinPipe");
-        }*/
-        /*
-        int n=1;
-        int z=0;
-        char *output;
-        output = (char *)malloc((n+1)*(sizeof(char)));
-        while(z<n){
-                read(*li_da->pipeID, &output[z], 1);
-        z++;
-        }
-        output[z]=0;
-        infoPrint("Anzahl: %d", n);
-        infoPrint("Read Pipe: %s!", output);
-        */
-        //infoPrint("Read from Pipe, client-id: %s",client_id);
+        infoPrint("MAIN: Login Response is OK!!!");
         
         /*Start the GUI-Thread*/
                         
@@ -205,12 +144,9 @@ int main(int argc, char ** argv)
         gui_data->argc=argc;
         gui_data->argv=argv;
         
-	pthread_t gui_thr;
 	if((pthread_create(&gui_thr, NULL, gui_thread, gui_data))!=0){
 		errorPrint("Error while creating thread: %s", strerror(errno));
-        }
-        
-        
+        }      
         
         /**Write CATALOG_REQUEST to server*/
         
@@ -221,11 +157,10 @@ int main(int argc, char ** argv)
                 infoPrint("Write to socket successful!");
         }
         
+        /**Wait, until game phase starts!!!*/
         sem_wait(&semaphore_main);
         
-        
-        
-        
+        infoPrint("MAIN: Game phase started!!!");
         
         /**Write QUESTION_REQUEST to server*/
         
@@ -237,11 +172,6 @@ int main(int argc, char ** argv)
         }
         
         sem_wait(&semaphore_main);
-        
-        //Endless loop to avoid closing at the moment
-        
-        while(1){
-        }
-        
+
 	return 0;
 }

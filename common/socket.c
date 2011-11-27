@@ -10,32 +10,17 @@
 
 /**----External Functions*/
 
-/**Tests the return value of the read/write command -> sockets*/
-
-/*void read_pipe_client(int n){
-    int z=0;
-    char *output;
-    output = (char *)malloc((n+1)*(sizeof(char)));
-    while(z<n){
-       read(stdPipe[0], &output[z], 1);
-       z++;
-    }
-    output[z]=0;
-    infoPrint("Anzahl: %d", n);
-    infoPrint("Read Pipe: %s!", output);
-    close(stdPipe[1]);
-    close(stdPipe[0]);
-    //return output;
-}*/
 int init_semaphore(sem_t semaphore){
 
 if(sem_init(&semaphore, 0, 0UL) == -1)
 	{
-		perror("sem_init");
+		perror("Error while initiating semaphore!!!");
 		return -1;
 	}
 return 0;
 }
+
+/**Tests the return value of the read/write command -> sockets*/
 
 void test_return(int ret){
     	if (ret == 0) {
@@ -67,14 +52,10 @@ void* question_thread(){
 
 /**Listener-Thread client*/
 
-void* listener_thread(void *param)
-{
-        //int sock = (int)param;
-        
-        struct LISTENER_DATA * li_da;
-        li_da = (struct LISTENER_DATA*)param;
-        
+void* listener_thread()
+{      
 	int ret;
+        int sock=get_socket();
         struct GB_NET_HEADER net_head;
         struct GB_LOGIN_RESPONSE_OK lg_rs_ok;
         struct GB_Player_List pl_li[6];
@@ -87,41 +68,26 @@ void* listener_thread(void *param)
         struct GB_Error_Warning er_wa;
         
         pthread_t question_thr;
-        int phase=0; /**The current phase of the game -> 0=preparation; 1=game*/
-        int ca_rp_counter=0;
-        int z;
         
-        int stdPipe[2]={0,0};
-        //int t=0;
-       
-        if(pipe(stdPipe)==-1){
-                errorPrint("Error, while creating stdinPipe");
-        }
-        infoPrint("stdPipe[0]= %d",stdPipe[0]);
-        li_da->pipeID=stdPipe[0];
-       
-        //extern int stdPipe[2];
-
-        /*
-        char test[32];
-        strcpy(test,"abcd");
-        write(stdPipe[1], test,4);
-        */        
+        int phase=0; /**The current phase of the game -> 0=preparation; 1=game*/
+        int ca_rp_counter=0; /**Counts the number of loaded catalogs --> Maximum=10*/
+        int z;
+            
 	while (1) {
-		ret = read(li_da->sock, &net_head, sizeof(net_head));
+		ret = read(sock, &net_head, sizeof(net_head));
                         test_return(ret);
                         if (ret > 0) {
                                 infoPrint("Read from socket successful!");
                                 infoPrint("NetHead_type: %d!", net_head.type);
                                 infoPrint("NetHead_size: %d!", ntohs(net_head.size));
                         }
-        switch(net_head.type){
+                switch(net_head.type){
                 
                         case TYPE_LG_RQ_OK:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 2");
                                 
-                                ret = read(li_da->sock, &lg_rs_ok.client_id, ntohs((net_head.size)));
+                                ret = read(sock, &lg_rs_ok.client_id, ntohs((net_head.size)));
                                 test_return(ret);
                                 if (ret > 0) {
                                     infoPrint("Client_ID: %d!", lg_rs_ok.client_id);
@@ -138,68 +104,48 @@ void* listener_thread(void *param)
                                         preparation_setMode(PREPARATION_MODE_NORMAL);
                                                 }else{
                                         preparation_setMode(PREPARATION_MODE_PRIVILEGED);
-                                        }
-                                        
-    
-                                        //preparation_addCatalog("Test.cat"); 
-    
-                                        //preparation_addPlayer("abcdefg");
-    
-                                        //preparation_showWindow();
-                                        
-                                        
-                                        
-                                        //char test[32];
-                                        //strcpy(test,"abcd");
-                                        //write(stdPipe[1], id,1);
-                                        //read_pipe_client(1);
-                                                               
+                                        }                                      
                                 }
                                 break;
                         case TYPE_CA_RP:
                                 infoPrint("Case 4");
                                 
                                 if (ca_rp_counter<10){
-                                    if ((ntohs((net_head.size)))!=0){
+                                        if ((ntohs((net_head.size)))!=0){
                                         
-                                        ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size))+1)*sizeof(char));
-                                
-                                        z=0;
+                                                ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size))+1)*sizeof(char));
+                                                z=0;
                                         
-                                        while (z<((ntohs(net_head.size)))){
-                                                ret = read(li_da->sock, &ca_rp[ca_rp_counter].catalog_msg[z],1);
-                                                z++;
-                                        }
+                                                while (z<((ntohs(net_head.size)))){
+                                                        ret = read(sock, &ca_rp[ca_rp_counter].catalog_msg[z],1);
+                                                        z++;
+                                                }
                                         
-                                        ca_rp[ca_rp_counter].catalog_msg[z]='\0';
+                                                ca_rp[ca_rp_counter].catalog_msg[z]='\0';
                                         
-                                        if (ret > 0) {
-                                                errorPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
-                                                preparation_addCatalog(ca_rp[ca_rp_counter].catalog_msg);
-                                        }
-                                                ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                                ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
+                                                if (ret > 0) {
+                                                        infoPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
+                                                        preparation_addCatalog(ca_rp[ca_rp_counter].catalog_msg);
+                                                }
+                                                        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                                        ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
                                         }else{
                                                 infoPrint("All catalogs read!");
                                                 ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
                                                 ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
-                                                
                                                 preparation_showWindow();
-                                                //preparation_selectCatalog(ca_rp[0].catalog_msg);
-                                        //sem_post(&semaphore_gui);
-                                        
-                                        /*ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
-                                        ca_rp[ca_rp_counter].catalog_msg[0]="0";*/
-                                    }
+                                        }
                                 }else{
-                                    if(ca_rp_counter==10){
-                                        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                        ca_rp[ca_rp_counter].h.size=0;
-                                        errorPrint("Error: You can not show more then 10 catalogs!");
-                                    }   
+                                        if(ca_rp_counter==10){
+                                                ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                                ca_rp[ca_rp_counter].h.size=0;
+                                                errorPrint("Error: You can not show more then 10 catalogs!");
+                                        }   
                                 }
                                 ca_rp_counter++;
                                 break;
+                                
+                                
                         case TYPE_CA_CH:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 5");
@@ -208,7 +154,7 @@ void* listener_thread(void *param)
                                 
                                 z=0;
                                 while (z<(ntohs(net_head.size))){
-                                    ret = read(li_da->sock, &ca_ch.catalog_msg[z],1);
+                                    ret = read(sock, &ca_ch.catalog_msg[z],1);
                                     //infoPrint("changed cat [%d]: %s", z, ca_ch.catalog_msg);
                                     z++;
                                 }
@@ -231,17 +177,17 @@ void* listener_thread(void *param)
                                 z=0;
                                 while (z<((ntohs((net_head.size)))/37)){
                                 
-                                        ret = read(li_da->sock, &pl_li[z].playername, 32);
+                                        ret = read(sock, &pl_li[z].playername, 32);
                                         test_return(ret);
                                         if (ret > 0) {
                                                 infoPrint("playername: %s!", pl_li[z].playername);
                                         }
-                                        ret = read(li_da->sock, &pl_li[z].score, 4);
+                                        ret = read(sock, &pl_li[z].score, 4);
                                         test_return(ret);
                                         if (ret > 0) {
                                                 infoPrint("score: %d!", ntohl(pl_li[z].score));
                                         }
-                                        ret = read(li_da->sock, &pl_li[z].client_id, 1);
+                                        ret = read(sock, &pl_li[z].client_id, 1);
                                         test_return(ret);
                                         if (ret > 0) {
                                                 infoPrint("Client_ID: %d!", pl_li[z].client_id);
@@ -269,7 +215,7 @@ void* listener_thread(void *param)
                                 
                                         z=0;
                                         while (z<((ntohs(net_head.size)))){
-                                                ret = read(li_da->sock, &st_ga.catalog_msg[z],1);
+                                                ret = read(sock, &st_ga.catalog_msg[z],1);
                                                 z++;
                                         }
                                         st_ga.catalog_msg[z]='\0';
@@ -288,7 +234,7 @@ void* listener_thread(void *param)
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 9");
                                 if ((ntohs(net_head.size))!=0){
-                                        ret = read(li_da->sock, &qu.question, 256);
+                                        ret = read(sock, &qu.question, 256);
                                         test_return(ret);
                                         if (ret > 0) {
                                         infoPrint("Question: %s!", qu.question);
@@ -296,7 +242,7 @@ void* listener_thread(void *param)
                                         }
                                         z=0;
                                         while(z<4){
-                                                ret = read(li_da->sock, &qu.answer[z], 128);
+                                                ret = read(sock, &qu.answer[z], 128);
                                                 test_return(ret);
                                                 if (ret > 0) {
                                                         infoPrint("Answer[%d]: %s!",z+1, qu.answer[z]);
@@ -304,7 +250,7 @@ void* listener_thread(void *param)
                                                 }
                                                 z++;
                                         }
-                                        ret = read(li_da->sock, &qu.time, 2);
+                                        ret = read(sock, &qu.time, 2);
                                         test_return(ret);
                                         if (ret > 0) {
                                                 infoPrint("Question: %d!", ntohs(qu.time));
@@ -324,12 +270,12 @@ void* listener_thread(void *param)
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 11");
                                 
-                                ret = read(li_da->sock, &qu_re.answer, 1);
+                                ret = read(sock, &qu_re.answer, 1);
                                 test_return(ret);
                                 if (ret > 0) {
                                     infoPrint("Answer was: %d!", qu_re.answer);
                                 }
-                                ret = read(li_da->sock, &qu_re.correct, 1);
+                                ret = read(sock, &qu_re.correct, 1);
                                 test_return(ret);
                                 if (ret > 0) {
                                     infoPrint("Correct answer is: %d!", qu_re.correct);
@@ -337,6 +283,7 @@ void* listener_thread(void *param)
                                 if (qu_re.answer!=255){
                                     if(qu_re.answer!=qu_re.correct){
                                         game_markAnswerWrong(qu_re.answer);
+                                        game_markAnswerCorrect(qu_re.correct);
                                         game_setStatusText("Die Antwort war falsch!");
                                         game_setStatusIcon(STATUS_ICON_WRONG);
                                     }else{
@@ -346,6 +293,7 @@ void* listener_thread(void *param)
                                     }
                                     
                                 }else{
+                                    game_markAnswerCorrect(qu_re.correct);
                                     game_setStatusText("Die Zeit ist leider abgelaufen!");
                                     game_setStatusIcon(STATUS_ICON_TIMEOUT);
                                 }
@@ -362,7 +310,7 @@ void* listener_thread(void *param)
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 12");
                                 
-                                ret = read(li_da->sock, &ga_ov.rank, 1);
+                                ret = read(sock, &ga_ov.rank, 1);
                                 test_return(ret);
                                 if (ret > 0) {
                                     infoPrint("Rank: %d!", ga_ov.rank);
@@ -395,7 +343,7 @@ void* listener_thread(void *param)
                         case TYPE_ER_WA:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 255");
-                                ret = read(li_da->sock, &er_wa.msg_type, 1);
+                                ret = read(sock, &er_wa.msg_type, 1);
                                 test_return(ret);
                                 if (ret > 0) {
                                         errorPrint("Errortype: %d!",er_wa.msg_type);
@@ -408,7 +356,7 @@ void* listener_thread(void *param)
                                 //er_wa.error_msg[ntohs((net_head.size))-1];
                                 z=0;
                                 while (z<((ntohs(net_head.size))-1)){
-                                    ret = read(li_da->sock, &er_wa.error_msg[z],1);
+                                    ret = read(sock, &er_wa.error_msg[z],1);
                                     z++;
                                 }
                                 er_wa.error_msg[z]='\0';
