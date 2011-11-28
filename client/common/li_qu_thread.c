@@ -171,9 +171,15 @@ void* listener_thread()
                                 infoPrint("Case 6");
                                 
                                 /**Clear the Playerlist*/
-                                
-                                preparation_clearPlayers();
-                                
+                                if (phase==0){
+                                        preparation_clearPlayers();
+                                }else{
+                                        z=0;                                               
+                                        while(z<6){
+                                            game_setPlayerName(z+1,NULL);
+                                            z++;
+                                        }
+                                }
                                 /**Read the Playerlist from the socket and show it in the GUI*/
                                 
                                 z=0;
@@ -251,6 +257,11 @@ void* listener_thread()
                                 
                                 if ((ntohs(net_head.size))!=0){
                                         
+                                        /**Reset status icon, status text + unmark answers*/
+                                        game_setStatusIcon(STATUS_ICON_NONE);
+                                        game_setStatusText("");
+                                        game_unmarkAnswers();
+                                        
                                         /**Read a question from the socket*/
                                         ret = read(sock, &qu.question, 256);
                                         test_socketOnErrors(ret);
@@ -272,17 +283,20 @@ void* listener_thread()
                                         test_socketOnErrors(ret);
                                         infoPrint("Question: %d!", ntohs(qu.time));
                                         
-                                        /**Reset status icon, status text + unmark answers + Enable Buttons*/
-                                        game_setStatusIcon(STATUS_ICON_NONE);
-                                        game_setStatusText("");
-                                        game_unmarkAnswers();
+                                        /**Enable Buttons*/
                                         game_setAnswerButtonsEnabled(1);
                                 }else{
                                     /**No more questions left*/
                                     infoPrint("No more questions left!!!");
-                                    
-                                    /**Close the window of the game phase*/
-                                    game_hideWindow();
+                                    game_setStatusIcon(STATUS_ICON_NONE);
+                                    game_setStatusText("Alle Fragen gespieltt! Warte auf andere Spieler...");
+                                    game_unmarkAnswers();
+                                    game_setQuestion("");
+                                    z=0;
+                                    while(z<4){
+                                        game_setAnswer(z,"");
+                                        z++;
+                                    }
                                 }
                                 break;
                         
@@ -335,6 +349,9 @@ void* listener_thread()
                         case TYPE_GA_OV:
                                 //ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 12");
+                                
+                                /**Close the window of the game phase*/
+                                game_hideWindow();
                                 
                                 /**Read rank from socket*/
                                 ret = read(sock, &ga_ov.rank, 1);
