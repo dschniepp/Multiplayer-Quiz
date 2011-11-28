@@ -139,10 +139,10 @@ int main(int argc, char ** argv)
         
         prepare_message(&lg_rq, TYPE_LG_RQ, strlen(argv[3]));
         ret = write(sock,&lg_rq,(strlen(argv[3])+sizeof(lg_rq.h)));
-        test_return(ret);
-        if (ret > 0) {
+        test_socketOnErrors(ret);
+        //if (ret > 0) {
                 infoPrint("Write to socket successful!");
-        }      
+        //}      
         
         /**Wait for Server to send Login_Response_OK, before starting the GUI*/
         sem_wait(&semaphore_main);
@@ -164,10 +164,10 @@ int main(int argc, char ** argv)
         
         prepare_message(&ca_rq, TYPE_CA_RQ, 0);
         ret = write(sock,&ca_rq,sizeof(ca_rq.h));
-        test_return(ret);
-        if (ret > 0) {
+        test_socketOnErrors(ret);
+        //if (ret > 0) {
                 infoPrint("Write to socket successful!");
-        }
+        //}
         
         /**Wait, until game phase starts!!!*/
         sem_wait(&semaphore_main);
@@ -178,11 +178,13 @@ int main(int argc, char ** argv)
         
         prepare_message(&qu_rq, TYPE_QU_RQ, 0);
         ret = write(sock,&qu_rq,sizeof(qu_rq.h));
-        test_return(ret);
-        if (ret > 0) {
+        test_socketOnErrors(ret);
+        //if (ret > 0) {
                 infoPrint("Write to socket successful!");
-        }
+        //}
         
+        /**Block Command-Thread*/
+                
         sem_wait(&semaphore_main);
 
 	return 0;

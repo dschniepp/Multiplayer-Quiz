@@ -35,7 +35,7 @@ return 0;
 
 /**Tests the return value of the read/write command -> sockets*/
 
-void test_return(int ret){
+void test_socketOnErrors(int ret){
     	if (ret == 0) {
 		errorPrint("Connection closed while trying to read/write");
                 if (get_guiruns()!=0){
@@ -46,7 +46,13 @@ void test_return(int ret){
                 }
 	}
 	if (ret < 0) {
-		errorPrint("Cannot read from/write to socket: %s", strerror(errno));		
+		errorPrint("Cannot read from/write to socket: %s", strerror(errno));
+                if (get_guiruns()!=0){
+                        guiShowErrorDialog("Fehler: Fehler beim schreib/lesezugriff auf den Socket!", 1);
+                }else{
+                        errorPrint("Fehler: Fehler beim schreib/lesezugriff auf den Socket!");
+                        close_prozess();
+                }
 	}
 }
 
@@ -59,10 +65,10 @@ void* question_thread(){
         
     prepare_message(&qu_rq, TYPE_QU_RQ, 0);
     ret = write(get_socket(),&qu_rq,sizeof(qu_rq.h));
-    test_return(ret);
-    if (ret > 0) {
+    test_socketOnErrors(ret);
+    //if (ret > 0) {
         infoPrint("Write to socket successful!");
-    }
+    //}
     sleep(4);
     sem_post(&semaphore_socket);
     pthread_exit(0);
@@ -73,8 +79,12 @@ void* question_thread(){
 
 void* listener_thread()
 {      
-	int ret;
+	int ret; /**Used for to save the return value while reading/writing to the socket!*/
         int sock=get_socket();
+        int phase=0; /**The current phase of the game -> 0=preparation; 1=game*/
+        int ca_rp_counter=0; /**Counts the number of loaded catalogs --> Maximum=10*/
+        int z;
+        
         struct GB_NET_HEADER net_head;
         struct GB_LOGIN_RESPONSE_OK lg_rs_ok;
         struct GB_Player_List pl_li[6];
@@ -85,21 +95,18 @@ void* listener_thread()
         struct GB_QUESTION_RESULT qu_re;
         struct GB_GAME_OVER ga_ov;
         struct GB_Error_Warning er_wa;
-        
-        
-        
-        int phase=0; /**The current phase of the game -> 0=preparation; 1=game*/
-        int ca_rp_counter=0; /**Counts the number of loaded catalogs --> Maximum=10*/
-        int z;
             
 	while (1) {
-		ret = read(sock, &net_head, sizeof(net_head));
-                        test_return(ret);
-                        if (ret > 0) {
+		ret = read(sock, &net_head.type, sizeof(net_head.type));
+                test_socketOnErrors(ret);
+                ret = read(sock, &net_head.size, sizeof(net_head.size));
+                test_socketOnErrors(ret);
+                
+                        //if (ret > 0) {
                                 infoPrint("Read from socket successful!");
                                 infoPrint("NetHead_type: %d!", net_head.type);
                                 infoPrint("NetHead_size: %d!", ntohs(net_head.size));
-                        }
+                        //}
                 switch(net_head.type){
                 
                         case TYPE_LG_RQ_OK:
@@ -107,8 +114,8 @@ void* listener_thread()
                                 infoPrint("Case 2");
                                 
                                 ret = read(sock, &lg_rs_ok.client_id, ntohs((net_head.size)));
-                                test_return(ret);
-                                if (ret > 0) {
+                                test_socketOnErrors(ret);
+                                //if (ret > 0) {
                                     infoPrint("Client_ID: %d!", lg_rs_ok.client_id);
                                     
                                         //char id[1];
@@ -124,7 +131,7 @@ void* listener_thread()
                                                 }else{
                                         preparation_setMode(PREPARATION_MODE_PRIVILEGED);
                                         }                                      
-                                }
+                                //}
                                 break;
                         case TYPE_CA_RP:
                                 infoPrint("Case 4");
@@ -137,28 +144,34 @@ void* listener_thread()
                                         
                                                 while (z<((ntohs(net_head.size)))){
                                                         ret = read(sock, &ca_rp[ca_rp_counter].catalog_msg[z],1);
+                                                        test_socketOnErrors(ret);
                                                         z++;
                                                 }
                                         
                                                 ca_rp[ca_rp_counter].catalog_msg[z]='\0';
                                         
-                                                if (ret > 0) {
+                                                //if (ret > 0) {
                                                         infoPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
                                                         preparation_addCatalog(ca_rp[ca_rp_counter].catalog_msg);
                                                         free(ca_rp[ca_rp_counter].catalog_msg);
-                                                }
-                                                        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                                        ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
+                                                //}
+                                                //        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                                //        ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
                                         }else{
                                                 infoPrint("All catalogs read!");
-                                                ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                                ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
+                                                //ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                                //ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
                                                 preparation_showWindow();
                                         }
                                 }else{
                                         if(ca_rp_counter==10){
-                                                ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                                ca_rp[ca_rp_counter].h.size=0;
+                                                //ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
+                                                //ca_rp[ca_rp_counter].h.size=0;
+                                                if (get_guiruns()!=0){
+                                                        guiShowMessageDialog("Es wurde versucht, mehr als 10 Kataloge zu laden!", 0);
+                                                }else{
+                                                        infoPrint("Es wurde versucht, mehr als 10 Kataloge zu laden!");
+                                                }
                                                 errorPrint("Error: You can not show more then 10 catalogs!");
                                         }   
                                 }
@@ -176,14 +189,15 @@ void* listener_thread()
                                 z=0;
                                 while (z<(ntohs(net_head.size))){
                                     ret = read(sock, &ca_ch.catalog_msg[z],1);
+                                    test_socketOnErrors(ret);
                                     //infoPrint("changed cat [%d]: %s", z, ca_ch.catalog_msg);
                                     z++;
                                 }
                                 ca_ch.catalog_msg[z]='\0';
-                                if (ret > 0) {
+                                //if (ret > 0) {
                                         errorPrint("Changed Catalog: %s!",ca_ch.catalog_msg);
-                                        preparation_selectCatalog(ca_ch.catalog_msg     );
-                                }
+                                        preparation_selectCatalog(ca_ch.catalog_msg);
+                                //}
                                 free(ca_ch.catalog_msg);
                                 break;
                         case TYPE_PL_LI:
@@ -200,20 +214,20 @@ void* listener_thread()
                                 while (z<((ntohs((net_head.size)))/37)){
                                 
                                         ret = read(sock, &pl_li[z].playername, 32);
-                                        test_return(ret);
-                                        if (ret > 0) {
+                                        test_socketOnErrors(ret);
+                                        //if (ret > 0) {
                                                 infoPrint("playername: %s!", pl_li[z].playername);
-                                        }
+                                        //}
                                         ret = read(sock, &pl_li[z].score, 4);
-                                        test_return(ret);
-                                        if (ret > 0) {
+                                        test_socketOnErrors(ret);
+                                        //if (ret > 0) {
                                                 infoPrint("score: %d!", ntohl(pl_li[z].score));
-                                        }
+                                        //}
                                         ret = read(sock, &pl_li[z].client_id, 1);
-                                        test_return(ret);
-                                        if (ret > 0) {
+                                        test_socketOnErrors(ret);
+                                        //if (ret > 0) {
                                                 infoPrint("Client_ID: %d!", pl_li[z].client_id);
-                                        }
+                                        //}
                                         switch(phase){
                                                 case 0: preparation_addPlayer(pl_li[z].playername);
                                                         break;
@@ -238,12 +252,13 @@ void* listener_thread()
                                         z=0;
                                         while (z<((ntohs(net_head.size)))){
                                                 ret = read(sock, &st_ga.catalog_msg[z],1);
+                                                test_socketOnErrors(ret);
                                                 z++;
                                         }
                                         st_ga.catalog_msg[z]='\0';
-                                        if (ret > 0) {
+                                        //if (ret > 0) {
                                                 infoPrint("Start_Game Message: %s!",st_ga.catalog_msg);
-                                        }
+                                        //}
                                         free(st_ga.catalog_msg);
                                 }       
                                 infoPrint("Server is ready to start the game! (Start_Game Message received)");
@@ -258,26 +273,26 @@ void* listener_thread()
                                 infoPrint("Case 9");
                                 if ((ntohs(net_head.size))!=0){
                                         ret = read(sock, &qu.question, 256);
-                                        test_return(ret);
-                                        if (ret > 0) {
+                                        test_socketOnErrors(ret);
+                                        //if (ret > 0) {
                                         infoPrint("Question: %s!", qu.question);
                                         game_setQuestion(qu.question);
-                                        }
+                                        //}
                                         z=0;
                                         while(z<4){
                                                 ret = read(sock, &qu.answer[z], 128);
-                                                test_return(ret);
-                                                if (ret > 0) {
+                                                test_socketOnErrors(ret);
+                                                //if (ret > 0) {
                                                         infoPrint("Answer[%d]: %s!",z+1, qu.answer[z]);
                                                         game_setAnswer(z,qu.answer[z]);
-                                                }
+                                                //}
                                                 z++;
                                         }
                                         ret = read(sock, &qu.time, 2);
-                                        test_return(ret);
-                                        if (ret > 0) {
+                                        test_socketOnErrors(ret);
+                                        //if (ret > 0) {
                                                 infoPrint("Question: %d!", ntohs(qu.time));
-                                        }
+                                        //}
                                         game_setStatusIcon(STATUS_ICON_NONE);
                                         game_setStatusText("");
                                         game_unmarkAnswers();
@@ -294,15 +309,15 @@ void* listener_thread()
                                 infoPrint("Case 11");
                                 
                                 ret = read(sock, &qu_re.answer, 1);
-                                test_return(ret);
-                                if (ret > 0) {
+                                test_socketOnErrors(ret);
+                                //if (ret > 0) {
                                     infoPrint("Answer was: %d!", qu_re.answer);
-                                }
+                                //}
                                 ret = read(sock, &qu_re.correct, 1);
-                                test_return(ret);
-                                if (ret > 0) {
+                                test_socketOnErrors(ret);
+                                //if (ret > 0) {
                                     infoPrint("Correct answer is: %d!", qu_re.correct);
-                                }
+                                //}
                                 if (qu_re.answer!=255){
                                     if(qu_re.answer!=qu_re.correct){
                                         game_markAnswerWrong(qu_re.answer);
@@ -334,43 +349,26 @@ void* listener_thread()
                                 infoPrint("Case 12");
                                 
                                 ret = read(sock, &ga_ov.rank, 1);
-                                test_return(ret);
-                                if (ret > 0) {
+                                test_socketOnErrors(ret);
+                                //if (ret > 0) {
                                     infoPrint("Rank: %d!", ga_ov.rank);
-                                }
-                                /*
-                                char textpart1[]="Glückwunsch Sie haben den ";
-                                char textpart2[]=" Platz belegt!";
+                                //}
                                 
-                                //ca_ch.catalog_msg = (char *)malloc(((ntohs(net_head.size))+1)*sizeof(char));
-                                
-                                char *rank = (char *)malloc(sizeof(uint8_t));
- 
-                                memcpy(rank, &ga_ov.rank, sizeof(int) );
-
-                                strncat(textpart1,rank,1);
-                                strncat(textpart1,textpart2,14);
- 
-                                // ints senden und am Ende freigeben
- 
-                                free(rank);
-                                */
                                 char message[50];
                                 sprintf(message,"Glueckwusch Sie haben den %dten Platz belegt!",ga_ov.rank);
                                 infoPrint("Message: %s",message);
                                 guiShowMessageDialog(message, 1);
                                 sem_wait(&semaphore_socket);
-                                //exit(0);
                                 break;
                                 
                         case TYPE_ER_WA:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 255");
                                 ret = read(sock, &er_wa.msg_type, 1);
-                                test_return(ret);
-                                if (ret > 0) {
+                                test_socketOnErrors(ret);
+                                //if (ret > 0) {
                                         errorPrint("Errortype: %d!",er_wa.msg_type);
-                                }
+                                //}
                                 
                                 //errorPrint("Net_Head size: %d", ((ntohs(net_head.size))-1));
                                 
@@ -380,13 +378,14 @@ void* listener_thread()
                                 z=0;
                                 while (z<((ntohs(net_head.size))-1)){
                                     ret = read(sock, &er_wa.error_msg[z],1);
+                                    test_socketOnErrors(ret);
                                     z++;
                                 }
                                 er_wa.error_msg[z]='\0';
                                 
                                 //ret = read(sock, &er_wa.error_msg,((ntohs(net_head.size))-1));
                                 
-                                if (ret > 0) {
+                                //if (ret > 0) {
                                         
                                     switch(er_wa.msg_type){
                                         
@@ -410,7 +409,7 @@ void* listener_thread()
                                     }
                                     
                                         //errorPrint("Error: %s!", er_wa.error_msg);
-                                }
+                                //}
                                 break;
                             
                         default:

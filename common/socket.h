@@ -20,8 +20,8 @@ int init_semaphore(sem_t semaphore);
 void connect_socket_client(int *sock, char serv_addr[], char port[]);
 void close_socket_client( int sock );
 void* listener_thread();
-void test_return(int ret);
-void read_pipe_client(int n);
+void test_socketOnErrors(int ret);
+//void read_pipe_client(int n);
 
 /*--------------Server Functions---------------------*/
 
