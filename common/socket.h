@@ -11,16 +11,14 @@ struct LISTENER_DATA {
 */
 #include <semaphore.h>
 
-sem_t semaphore_main;
-sem_t semaphore_socket;
+
 
 /*--------------Client Functions---------------------*/
-void close_prozess();
-int init_semaphore(sem_t semaphore);
+pthread_t get_quThread();
 void connect_socket_client(int *sock, char serv_addr[], char port[]);
 void close_socket_client( int sock );
 void* listener_thread();
-void test_socketOnErrors(int ret);
+
 //void read_pipe_client(int n);
 
 /*--------------Server Functions---------------------*/

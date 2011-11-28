@@ -1,22 +1,22 @@
-/**socket.c*/
-#include "common/socket.h"
-#include "client/common/global.h"
-#include "client/common/client_util.h"
-#include "client/gui/gui_interface.h"
-#include "client/main.h"
-#include <unistd.h>
+/* 
+ * File:   li_qu_thread.c
+ * Author: sysprog
+ *
+ * Created on November 28, 2011, 5:07 PM
+ */
 
-
-//static int stdPipe[2];
-/**--------------Client Functions---------------------*/
-
-/**----External Functions*/
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include "client/common/li_qu_thread.h"
+#include "client/common/client_global.h"
 
 static pthread_t question_thr;
 
 pthread_t get_quThread(){
     return question_thr;
 }
+
+/**Question change Thread client*/
 
 void* question_thread(){
        
@@ -28,10 +28,12 @@ void* question_thread(){
     prepare_message(&qu_rq, TYPE_QU_RQ, 0);
     ret = write(get_socket(),&qu_rq,sizeof(qu_rq.h));
     test_socketOnErrors(ret);
-    //if (ret > 0) {
-        infoPrint("Write to socket successful!");
-    //}
+    infoPrint("Write to socket successful!");
+    
+    /**Wait for 4 seconds*/
     sleep(4);
+    
+    /**Allow listener-thread to move on*/
     sem_post(&semaphore_socket);
     pthread_exit(0);
     return NULL;
@@ -59,42 +61,46 @@ void* listener_thread()
         struct GB_Error_Warning er_wa;
             
 	while (1) {
+                
+                /**Read type and size of the next message*/
+            
 		ret = read(sock, &net_head.type, sizeof(net_head.type));
                 test_socketOnErrors(ret);
                 ret = read(sock, &net_head.size, sizeof(net_head.size));
                 test_socketOnErrors(ret);
                 
-                        //if (ret > 0) {
-                                infoPrint("Read from socket successful!");
-                                infoPrint("NetHead_type: %d!", net_head.type);
-                                infoPrint("NetHead_size: %d!", ntohs(net_head.size));
-                        //}
-                switch(net_head.type){
+                infoPrint("Read from socket successful!");
+                infoPrint("NetHead_type: %d!", net_head.type);
+                infoPrint("NetHead_size: %d!", ntohs(net_head.size));
                 
+                switch(net_head.type){
+                    
+                        /**Case 2: LOGIN REQUEST_OK*/
                         case TYPE_LG_RQ_OK:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 2");
                                 
+                                /**Read client-ID from server*/
+                                
                                 ret = read(sock, &lg_rs_ok.client_id, ntohs((net_head.size)));
                                 test_socketOnErrors(ret);
-                                //if (ret > 0) {
-                                    infoPrint("Client_ID: %d!", lg_rs_ok.client_id);
+                                infoPrint("Client_ID: %d!", lg_rs_ok.client_id);
                                     
-                                        //char id[1];
-                                        //sprintf(id,"%d",lg_rs_ok.client_id);
-                                        infoPrint("Semaphore UP() -> Wait until GUI starts");
-                                        sem_post(&semaphore_main);
-                                        infoPrint("Listener Thread Moves on, after Semaphore UP()");
-                                        
-                                        sem_wait(&semaphore_socket);
-                                        
-                                        if(lg_rs_ok.client_id != 0){
+                                /**Let the Main/Command-Thread move on*/
+                                sem_post(&semaphore_main);
+                                
+                                /**Wait until GUI-Thread is started*/        
+                                sem_wait(&semaphore_socket);
+                                
+                                /**Set the mode on the preparation window, depending on the client-ID -> game leader?*/
+                                if(lg_rs_ok.client_id != 0){
                                         preparation_setMode(PREPARATION_MODE_NORMAL);
-                                                }else{
+                                }else{
                                         preparation_setMode(PREPARATION_MODE_PRIVILEGED);
-                                        }                                      
-                                //}
+                                }                                      
                                 break;
+                                
+                        /**Case 4: CATALOG_RESPONSE*/
                         case TYPE_CA_RP:
                                 infoPrint("Case 4");
                                 
@@ -104,65 +110,63 @@ void* listener_thread()
                                                 ca_rp[ca_rp_counter].catalog_msg = (char *)malloc(((ntohs(net_head.size))+1)*sizeof(char));
                                                 z=0;
                                         
+                                                /**Read catalog name from server*/                                                
                                                 while (z<((ntohs(net_head.size)))){
                                                         ret = read(sock, &ca_rp[ca_rp_counter].catalog_msg[z],1);
                                                         test_socketOnErrors(ret);
                                                         z++;
                                                 }
-                                        
+                                                /**Set Null-Byte on the strings end*/
                                                 ca_rp[ca_rp_counter].catalog_msg[z]='\0';
                                         
-                                                //if (ret > 0) {
-                                                        infoPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
-                                                        preparation_addCatalog(ca_rp[ca_rp_counter].catalog_msg);
-                                                        free(ca_rp[ca_rp_counter].catalog_msg);
-                                                //}
-                                                //        ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                                //        ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
+                                                infoPrint("Catalog Nr.%d: %s!",ca_rp_counter, ca_rp[ca_rp_counter].catalog_msg);
+                                                preparation_addCatalog(ca_rp[ca_rp_counter].catalog_msg);
+                                                free(ca_rp[ca_rp_counter].catalog_msg); 
                                         }else{
+                                                /**Show the Window, because all catalogs are loaded*/
                                                 infoPrint("All catalogs read!");
-                                                //ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                                //ca_rp[ca_rp_counter].h.size=(ntohs(net_head.size));
                                                 preparation_showWindow();
                                         }
                                 }else{
                                         if(ca_rp_counter==10){
-                                                //ca_rp[ca_rp_counter].h.type=TYPE_CA_RP;
-                                                //ca_rp[ca_rp_counter].h.size=0;
+                                                errorPrint("Error: You can not show more then 10 catalogs!");
+                                                /**Show the User a message, that there were more then 10 catalogs available, but only 10 loaded*/
                                                 if (get_guiruns()!=0){
                                                         guiShowMessageDialog("Es wurde versucht, mehr als 10 Kataloge zu laden!", 0);
                                                 }else{
                                                         infoPrint("Es wurde versucht, mehr als 10 Kataloge zu laden!");
                                                 }
-                                                errorPrint("Error: You can not show more then 10 catalogs!");
+                                                /**Show the Window, because the max. of catalogs is loaded*/
+                                                preparation_showWindow();
                                         }   
                                 }
-                                
                                 ca_rp_counter++;
                                 break;
-                                
-                                
+                               
+                        /**Case 5: CATALOG_CHANGE*/        
                         case TYPE_CA_CH:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 5");
                                 
                                 ca_ch.catalog_msg = (char *)malloc(((ntohs(net_head.size))+1)*sizeof(char));
-                                
                                 z=0;
+                                
+                                /**Read catalog name from server*/
                                 while (z<(ntohs(net_head.size))){
                                     ret = read(sock, &ca_ch.catalog_msg[z],1);
                                     test_socketOnErrors(ret);
-                                    //infoPrint("changed cat [%d]: %s", z, ca_ch.catalog_msg);
                                     z++;
                                 }
+                                /**Set Null-Byte on the strings end*/
                                 ca_ch.catalog_msg[z]='\0';
-                                //if (ret > 0) {
-                                        errorPrint("Changed Catalog: %s!",ca_ch.catalog_msg);
-                                        preparation_selectCatalog(ca_ch.catalog_msg);
-                                //}
+                                
+                                infoPrint("Changed Catalog: %s!",ca_ch.catalog_msg);
+                                preparation_selectCatalog(ca_ch.catalog_msg);
                                 free(ca_ch.catalog_msg);
                                 break;
-                        case TYPE_PL_LI:
+                        
+                        /**Case 6: PLAYER_LIST*/        
+                        case TYPE_PL_LI:         
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 6");
                                 
@@ -175,42 +179,51 @@ void* listener_thread()
                                 z=0;
                                 while (z<((ntohs((net_head.size)))/37)){
                                 
+                                        /**Read player name from socket*/
                                         ret = read(sock, &pl_li[z].playername, 32);
                                         test_socketOnErrors(ret);
-                                        //if (ret > 0) {
-                                                infoPrint("playername: %s!", pl_li[z].playername);
-                                        //}
+                                        infoPrint("player name: %s!", pl_li[z].playername);
+                                        
+                                        /**Read score from socket*/
                                         ret = read(sock, &pl_li[z].score, 4);
                                         test_socketOnErrors(ret);
-                                        //if (ret > 0) {
-                                                infoPrint("score: %d!", ntohl(pl_li[z].score));
-                                        //}
+                                        infoPrint("score: %d!", ntohl(pl_li[z].score));
+                                        
+                                        /**Read client-ID from socket*/
                                         ret = read(sock, &pl_li[z].client_id, 1);
                                         test_socketOnErrors(ret);
-                                        //if (ret > 0) {
-                                                infoPrint("Client_ID: %d!", pl_li[z].client_id);
-                                        //}
+                                        infoPrint("Client_ID: %d!", pl_li[z].client_id);
+                                        
+                                        /**Switch, depending on the current phase of the game*/
                                         switch(phase){
-                                                case 0: preparation_addPlayer(pl_li[z].playername);
+                                                case 0: /**preparation phase -> add player*/
+                                                        preparation_addPlayer(pl_li[z].playername);
                                                         break;
-                                                case 1: game_setPlayerName(z+1,pl_li[z].playername);
+                                                case 1: /**game phase -> add player, score and highlight own player*/
+                                                        game_setPlayerName(z+1,pl_li[z].playername);
                                                         game_setPlayerScore(z+1,ntohl(pl_li[z].score));
                                                         if(lg_rs_ok.client_id==pl_li[z].client_id){
                                                             game_highlightPlayer(z+1);
                                                         }
                                                         break;
-                                                default:errorPrint("Unknown phase --> neither preparation, nor game");
+                                                default:/**error -> unknown phase*/
+                                                        errorPrint("Unknown phase --> neither preparation, nor game");
+                                                        close_process();
                                                         break;
                                         }                
                                         z++;
                                 }
                                 break;
+                                
+                        /**Case 7: START_GAME*/        
                         case TYPE_ST_GA:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 7");
+                                
                                 if ((ntohs(net_head.size))!=0){
                                         st_ga.catalog_msg = (char *)malloc(((ntohs(net_head.size)))*sizeof(char));
                                 
+                                        /**Read catalog name from server, if it was send*/
                                         z=0;
                                         while (z<((ntohs(net_head.size)))){
                                                 ret = read(sock, &st_ga.catalog_msg[z],1);
@@ -218,68 +231,77 @@ void* listener_thread()
                                                 z++;
                                         }
                                         st_ga.catalog_msg[z]='\0';
-                                        //if (ret > 0) {
-                                                infoPrint("Start_Game Message: %s!",st_ga.catalog_msg);
-                                        //}
+                                        infoPrint("Start_Game Message: %s!",st_ga.catalog_msg);
                                         free(st_ga.catalog_msg);
                                 }       
+                                /**Start the game phase*/
                                 infoPrint("Server is ready to start the game! (Start_Game Message received)");
                                 preparation_hideWindow();
                                 phase=1;
                                 game_showWindow();
+                                
+                                /**Let the Main/Command-Thread move on*/
                                 sem_post(&semaphore_main);
                                 break;
-                                
+                        
+                        /**Case 9: QUESTION*/        
                         case TYPE_QU:
-                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
+                                //ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 9");
+                                
                                 if ((ntohs(net_head.size))!=0){
+                                        
+                                        /**Read a question from the socket*/
                                         ret = read(sock, &qu.question, 256);
                                         test_socketOnErrors(ret);
-                                        //if (ret > 0) {
                                         infoPrint("Question: %s!", qu.question);
                                         game_setQuestion(qu.question);
-                                        //}
+                                        
+                                        /**Read the 4 answers from the socket*/
                                         z=0;
                                         while(z<4){
                                                 ret = read(sock, &qu.answer[z], 128);
                                                 test_socketOnErrors(ret);
-                                                //if (ret > 0) {
-                                                        infoPrint("Answer[%d]: %s!",z+1, qu.answer[z]);
-                                                        game_setAnswer(z,qu.answer[z]);
-                                                //}
+                                                infoPrint("Answer[%d]: %s!",z+1, qu.answer[z]);
+                                                game_setAnswer(z,qu.answer[z]);
                                                 z++;
                                         }
+                                        
+                                        /**Read the time, the player has, to answer the question*/
                                         ret = read(sock, &qu.time, 2);
                                         test_socketOnErrors(ret);
-                                        //if (ret > 0) {
-                                                infoPrint("Question: %d!", ntohs(qu.time));
-                                        //}
+                                        infoPrint("Question: %d!", ntohs(qu.time));
+                                        
+                                        /**Reset status icon, status text + unmark answers + Enable Buttons*/
                                         game_setStatusIcon(STATUS_ICON_NONE);
                                         game_setStatusText("");
                                         game_unmarkAnswers();
                                         game_setAnswerButtonsEnabled(1);
                                 }else{
-                                    /**No more questions left!!!*/
+                                    /**No more questions left*/
                                     infoPrint("No more questions left!!!");
+                                    
+                                    /**Close the window of the game phase*/
                                     game_hideWindow();
                                 }
                                 break;
-                                
+                        
+                        /**Case 11: QUESTION_RESULT*/        
                         case TYPE_QU_RE:
-                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
+                                //ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 11");
                                 
+                                /**Read the given answer from the socket*/
                                 ret = read(sock, &qu_re.answer, 1);
                                 test_socketOnErrors(ret);
-                                //if (ret > 0) {
-                                    infoPrint("Answer was: %d!", qu_re.answer);
-                                //}
+                                infoPrint("Answer was: %d!", qu_re.answer);
+                                
+                                /**Read the correct answer from the socket*/
                                 ret = read(sock, &qu_re.correct, 1);
                                 test_socketOnErrors(ret);
-                                //if (ret > 0) {
-                                    infoPrint("Correct answer is: %d!", qu_re.correct);
-                                //}
+                                infoPrint("Correct answer is: %d!", qu_re.correct);
+                                
+                                /**Show text and icon, depending on the fact if the answer, was right, wrong, or there was a timeout*/
                                 if (qu_re.answer!=255){
                                     if(qu_re.answer!=qu_re.correct){
                                         game_markAnswerWrong(qu_re.answer);
@@ -297,46 +319,51 @@ void* listener_thread()
                                     game_setStatusText("Die Zeit ist leider abgelaufen!");
                                     game_setStatusIcon(STATUS_ICON_TIMEOUT);
                                 }
+                                /**Disable Buttons*/
                                 game_setAnswerButtonsEnabled(0);
                                 
-                                
+                                /**Start question change thread*/
                                 if((pthread_create(&question_thr, NULL, question_thread, NULL))!=0){
                                         errorPrint("Error while creating question change thread: %s", strerror(errno));
                                 }
+                                
+                                /**Wait until question change thread finished*/
                                 sem_wait(&semaphore_socket);
                                 break;
                         
+                        /**Case 12: GAME_OVER*/         
                         case TYPE_GA_OV:
-                                ca_rp_counter=0; /**set ca_rp_counter to zero*/
+                                //ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 12");
                                 
+                                /**Read rank from socket*/
                                 ret = read(sock, &ga_ov.rank, 1);
                                 test_socketOnErrors(ret);
-                                //if (ret > 0) {
-                                    infoPrint("Rank: %d!", ga_ov.rank);
-                                //}
+                                infoPrint("Rank: %d!", ga_ov.rank);
                                 
+                                /**Prepare and show game end message -> After showing the message quit game*/
                                 char message[50];
                                 sprintf(message,"Glueckwusch Sie haben den %dten Platz belegt!",ga_ov.rank);
                                 infoPrint("Message: %s",message);
                                 guiShowMessageDialog(message, 1);
+                                
+                                /**Block thread, until process gets quit from close_process*/
                                 sem_wait(&semaphore_socket);
                                 break;
-                                
+                        
+                        /**Case 255: ERROR_WARNING*/        
                         case TYPE_ER_WA:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("Case 255");
+                                
+                                /**Read type of error message from socket*/
                                 ret = read(sock, &er_wa.msg_type, 1);
                                 test_socketOnErrors(ret);
-                                //if (ret > 0) {
-                                        errorPrint("Errortype: %d!",er_wa.msg_type);
-                                //}
-                                
-                                //errorPrint("Net_Head size: %d", ((ntohs(net_head.size))-1));
+                                infoPrint("Errortype: %d!",er_wa.msg_type);
                                 
                                 er_wa.error_msg = (char *)malloc(((ntohs(net_head.size))-1)*sizeof(char));
                                 
-                                //er_wa.error_msg[ntohs((net_head.size))-1];
+                                /**Read error message from socket*/
                                 z=0;
                                 while (z<((ntohs(net_head.size))-1)){
                                     ret = read(sock, &er_wa.error_msg[z],1);
@@ -345,18 +372,19 @@ void* listener_thread()
                                 }
                                 er_wa.error_msg[z]='\0';
                                 
-                                //ret = read(sock, &er_wa.error_msg,((ntohs(net_head.size))-1));
-                                
-                                //if (ret > 0) {
+                                /**Switch, depending on error message type*/
+                                switch(er_wa.msg_type){
                                         
-                                    switch(er_wa.msg_type){
-                                        
-                                        case 0: guiShowMessageDialog(er_wa.error_msg, 0);
+                                        case 0: /**Usual error message*/
+                                                guiShowMessageDialog(er_wa.error_msg, 0);
                                                 free(er_wa.error_msg);
                                                 break;
-                                        case 1: if (get_guiruns()!=0){
+                                    case 1: /**Fatal error message*/
+                                                if (get_guiruns()!=0){
                                                         guiShowErrorDialog(er_wa.error_msg, 1);
                                                         free(er_wa.error_msg);
+                                                        
+                                                        /**Block listener thread, until process gets closed*/
                                                         sem_wait(&semaphore_socket);
                                                 }else{
                                                         errorPrint("Error: %s!", er_wa.error_msg);
@@ -366,301 +394,19 @@ void* listener_thread()
                                                 break;
                                         default:
                                                 errorPrint("Error: Unknown case, while printing error/warning message!!!");
+                                                close_process();
                                                 break;
                                         
                                     }
-                                    
-                                        //errorPrint("Error: %s!", er_wa.error_msg);
-                                //}
                                 break;
                             
                         default:
                                 ca_rp_counter=0; /**set ca_rp_counter to zero*/
                                 infoPrint("default Case");
+                                close_process();
                                 break;
                 }
-        //t++;
-        //break;
 	}
         pthread_exit(0);
 	return NULL;
 }
- 
-/**Function to connect client sockets
- * Call-By-Refferenz Übergabe --> sock
- * Je nach Fall, wird folgendes in sock geschrieben:
- * Connected	=	Socketnr
- * Error	=	-1
- * --> Prüfe sock nach dem Aufruf auf -1 !!!
- **/
- 
-void connect_socket_client(int *sock, char serv_addr[], char port[]){
- 
-	struct addrinfo *addr_info, *p, hints;
-	int ret;
-	/**Set the socket at the beginning to -1 and change value if connection works!*/
-		
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
-	hints.ai_flags = 0 /** | AI_ADDRCONFIG */;
-	
-	
-		/**RTFM: getaddrinfo */
-        ret = getaddrinfo(serv_addr, port, &hints, &addr_info);
-        if (ret){
-			errorPrint("getaddrinfo: %s", gai_strerror(ret));
-			exit(1);
-		}
-
-        p = addr_info;
-        while (p){
-			
-			char dst[INET6_ADDRSTRLEN];
-
-			/**Create socket for found family */		
-                        *sock = socket(p->ai_family, p->ai_socktype, 0);
-
-			/**RTFM: getnameinfo */
-			getnameinfo(p->ai_addr,
-			p->ai_addrlen,
-			dst,
-			sizeof(dst),
-			NULL,
-			0,
-			NI_NUMERICHOST);
-
-			/**Try to connect */
-                        if (connect(*sock, p->ai_addr, p->ai_addrlen) == 0){
-                                infoPrint("Connected");
-                                break;
-				
-			}else{
-				errorPrint("Error, while trying %s",dst);
-			}
-			p = p->ai_next;		
-		}
-        freeaddrinfo(addr_info);
-}
-/**Function to close client socket*/
-
-void close_socket_client( int sock ){
-    close(sock);
-}
-
-/**--------------Server Functions---------------------*/
-
-/**----Internal Functions*/
-
-/**
- * struct to pass custom data to echo_thread
- **/
-struct client_data {
-	int sock;
-	struct sockaddr_storage addr;
-	socklen_t addrlen;
-};
-
-
-/**
- * Copy all data from fd -> fd
- * using a buffer of 512 Byte
- **/
-static void echo_loop(int fd)
-{
-	int ret;
-	static char buf[512];
-
-	while (1) {
-		ret = read(fd, buf, sizeof(buf));
-                infoPrint("official readtest :-)/n");
-		if (ret == 0) {
-			break;
-		}
-		if (ret < 0) {
-			errorPrint("Cannot read: %s", strerror(errno));
-			break;
-		}
-		if (write(fd, buf, ret) < ret) {
-			errorPrint("Cannot write: %s", strerror(errno));
-			break;
-		}
-	}
-}
-
-/**
- * Thread to handle connection in background and run echo_loop
- * param: struct client_data*
- **/
-void* echo_thread(void* param)
-{
-	char dst[INET6_ADDRSTRLEN];
-	struct client_data * data;
-	data = (struct client_data*)param;
-
-	/* RTFM: getnameinfo */
-	getnameinfo((struct sockaddr*)&data->addr,
-			data->addrlen,
-			dst,
-			sizeof(dst),
-			NULL,
-			0,
-			NI_NUMERICHOST);
-
-	infoPrint("Connection opened from %s",dst);
-	echo_loop(data->sock);
-	close(data->sock);
-	infoPrint("Connection closed from %s", dst);
-
-	free(data);
-
-	pthread_exit(0);
-	return NULL;
-}
-
-/**----External Functions*/
-
-/**Function to connect server sockets
- * Call-By-Refferenz Übergabe --> sockets, numsockets
- * Je nach Fall, wird folgendes in sockets geschrieben:
- * Connected	=	Socketummern
- * Error		=	sockets(0) = -1
- * --> Prüfe sockets(0) nach dem Aufruf auf -1 !!!
- **/
-
-
-
-void connect_socket_server(int sockets[], int *numsockets, char server[], char service[]){
-
-	struct addrinfo *addr_info, *p, hints;
-	int ret;
-	*numsockets = 0;
-	/**Set the socket at the beginning to -1 and change value if connection works!*/
-	sockets[*numsockets] = -1;
-	
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
-	hints.ai_flags = AI_PASSIVE | AI_V4MAPPED;
-
-	/* RTFM: getaddrinfo */
-	ret = getaddrinfo(server, service, &hints, &addr_info);
-	if (ret)
-	{
-		errorPrint("Error in getaddrinfo: %s", gai_strerror(ret));
-		exit(1);
-	}
-
-	p = addr_info;
-	while (p)
-	{
-		int s;
-		char dst[INET6_ADDRSTRLEN];
-		char service[INET6_ADDRSTRLEN];
-		int on = 1;
-
-		/* Create socket for found family */		
-		s = socket(p->ai_family, p->ai_socktype, 0);
-
-		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
-			errorPrint("Error in setsockopt: %s", strerror(errno)); /* maybe not so fatal, continue */
-		}
-		if (p->ai_family == AF_INET6) {
-			if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0) {
-				errorPrint("Error in setsockopt: %s", strerror(errno));
-			}
-		}
-
-		/* RTFM: getnameinfo */
-		getnameinfo(p->ai_addr,
-				p->ai_addrlen,
-				dst,
-				sizeof(dst),
-				service,
-				sizeof(service),
-				NI_NUMERICHOST | NI_NUMERICSERV);
-
-		infoPrint("Trying %s:%s ... ",dst, service);
-
-		/* Try to bind socket */
-		if (bind(s, p->ai_addr, p->ai_addrlen) == 0) {
-			if (listen(s, 1) < 0) {
-				errorPrint("listen failed: %s", strerror(errno));
-				close(s);
-			} else 	{
-				infoPrint("bind successful");
-				sockets[*numsockets] = s;
-                                *numsockets = *numsockets + 1;
-			}
-		} else {
-			errorPrint("bind failed: %s", strerror(errno));
-			close(s);
-		}
-
-		p = p->ai_next;
-	}
-	freeaddrinfo(addr_info);
-}
-
-void close_socket_server( int sockets[], int numsockets ){
-    int i;
-	for (i=0; i<numsockets; i++) {
-		close(sockets[i]);
-	}
-}
-
-/**
- * Wait for connection on all available sockets
- * fd: array of sockets in listen state
- * numfd: number of valid sockets in fd
- **/
-
-void accept_loop_server(int fd[], int numfd)
-{
-	fd_set set;
-	int max, i, ret;
-
-	if (numfd < 1) {
-		errorPrint("No sockets available!");
-		return;
-	}
-	while (1) {
-		max = 0;
-		FD_ZERO(&set);
-		for (i=0; i<numfd; i++) {
-			if (fd[i] > max)
-				max = fd[i];
-			FD_SET(fd[i], &set);
-		}
-
-		/* wait for first fd that has data */
-		ret = select(max+1, &set, NULL, NULL, NULL);
-		if (ret <= 0) {
-			errorPrint("Error in select: %s", strerror(errno));
-			return;
-		}
-		for (i=0; i<numfd; i++)
-			if (FD_ISSET(fd[i], &set)) {
-				struct client_data *data;
-
-				data = (struct client_data*)malloc(sizeof(struct client_data));
-
-				data->addrlen = sizeof(data->addr);
-				data->sock = accept(fd[i], (struct sockaddr*) &data->addr, &data->addrlen);
-
-				if (data->sock < 0) {
-					errorPrint("Error in accept: %s", strerror(errno));
-					free(data);
-				} else {
-					pthread_t thread_id;
-					/* Background new connection */
-					if((pthread_create(&thread_id, NULL, echo_thread, data))!=0){
-						errorPrint("Error while creating thread: %s", strerror(errno));
-					};
-				}
-			}
-	}
-}
-

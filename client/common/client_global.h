@@ -28,9 +28,12 @@ extern "C" {
     #include <sys/un.h>
     #include <signal.h>
     #include <semaphore.h>
-    #include "common/message.h"
     #include "common/util.h"
+    #include "client/main.h"
     #include "client/gui/gui_interface.h"
+    #include "client/common/client_socket.h"
+    #include "client/common/client_util.h"
+    #include "client/common/li_qu_thread.h"
    
     #define TYPE_LG_RQ 1
     #define TYPE_LG_RQ_OK 2
@@ -120,10 +123,10 @@ extern "C" {
         uint8_t msg_type;
         char *error_msg;
     };
-    //struct GB_LOGIN_REQUEST GB_LR;
-    
     #pragma pack(0)
 
+    sem_t semaphore_main;
+    sem_t semaphore_socket;
     
 #ifdef	__cplusplus
 }

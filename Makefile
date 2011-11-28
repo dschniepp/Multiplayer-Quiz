@@ -20,7 +20,7 @@ LOADER_OBJECTS = loader/main.o loader/browse.o loader/load.o loader/parser.o com
 
 #SERVER_OBJECTS = server/main.o common/util.o common/message.o	# Liste der Server-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
 
-CLIENT_OBJECTS = client/main.o common/util.o common/socket.o common/message.o client/gui/gui_interface.o	# Liste der Client-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
+CLIENT_OBJECTS = client/main.o common/util.o client/gui/gui_interface.o client/common/client_socket.o client/common/client_util.o client/common/li_qu_thread.o	# Liste der Client-Objektdateien, WEITERE MODULE HIER HINZUFÜGEN!
 
 TARGETS = bin/loader bin/client #bin/server 
 
@@ -98,9 +98,9 @@ bin/client:	$(CLIENT_OBJECTS) client/gui/libquizgui32.a
 # Gemeinsam verwendete Objektdateien
 #
 common/util.o:	common/util.c common/util.h
-common/socket.o: common/socket.c common/socket.h 
-common/message.o: common/message.c common/message.h
-client/gui/gui_interface.o: client/gui/gui_interface.c client/gui/gui_interface.h
+#common/socket.o: common/socket.c common/socket.h 
+#common/message.o: common/message.c common/message.h
+
 # Hier weitere gemeinsam verwendete Module eintragen!
 
 ###################################################################
@@ -131,6 +131,11 @@ client/gui/gui_interface.o: client/gui/gui_interface.c client/gui/gui_interface.
 # Objektdateien des Clients
 #
 
+client/gui/gui_interface.o: client/gui/gui_interface.c client/gui/gui_interface.h
+client/common/client_util.o: client/common/client_util.c client/common/client_util.h
+client/common/client_socket.o: client/common/client_socket.c client/common/client_socket.h
+client/common/li_qu_thread.o: client/common/li_qu_thread.c client/common/li_qu_thread.h
+
 # Hier Abhängigkeiten der Client-Module eintragen!
-client/main.o:		client/main.c common/util.h common/socket.h common/message.h client/gui/gui_interface.h
+client/main.o:		client/main.c client/main.h common/util.h client/gui/gui_interface.h client/common/client_socket.h client/common/client_util.h client/common/li_qu_thread.h client/common/client_global.h
     

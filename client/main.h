@@ -11,6 +11,7 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
+    
 pthread_t get_liThread();
 pthread_t get_guiThread();
 int get_socket(void);

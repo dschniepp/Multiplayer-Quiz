@@ -1,4 +1,4 @@
-#include "global.h" 
+#include "client/common/global.h" 
 #include "common/message.h"
 /*
 #define NET_TYPE_MESSAGE 1

@@ -5,9 +5,13 @@
  * \brief	Implementierung diverser Hilfsfunktionen für Ein-/Ausgabe, Fehlersuche usw.
  */
 
-#include "global.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 #include "util.h"
-
 
 static const char *prog_name = "<unknown>";	/**< Aufrufname des Programms (argv[0]) */
 static int debug_enabled = 0;			/**< Debug-Ausgaben eingeschaltet? */

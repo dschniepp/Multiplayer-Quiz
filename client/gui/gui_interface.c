@@ -1,7 +1,8 @@
-#include "gui_interface.h"
-#include "common/global.h"
-#include "client/main.h"
-#include "common/socket.h"
+//#include "gui_interface.h"
+//#include "client/main.h"
+//#include "common/socket.h"
+#include "client/common/client_global.h"
+
 
 void preparation_onCatalogChanged(const char *newSelection){
     
@@ -20,9 +21,7 @@ void preparation_onCatalogChanged(const char *newSelection){
     test_socketOnErrors(ret);
     ret = write(get_socket(),newSelection,strlen(newSelection));
     test_socketOnErrors(ret);
-    //if (ret > 0) {
     infoPrint("Write to socket successful!");
-    //}
     free(ca_ch.catalog_msg);      
 }
 
@@ -34,13 +33,6 @@ void preparation_onStartClicked(const char *currentSelection){
     /**allocate memory to write*/
     
     st_ga.catalog_msg = (char *)malloc(sizeof(currentSelection)*sizeof(char));
-        /*
-        if (currentSelection[sizeof(currentSelection)-1]=='\0'){
-            infoPrint("Nullbyte gesetzt!");
-            
-        }else{
-            infoPrint("Nullbyte NICHT gesetzt!:");
-        }*/
     
     /**Write START_GAME to server*/
         
@@ -50,9 +42,7 @@ void preparation_onStartClicked(const char *currentSelection){
     test_socketOnErrors(ret);
     ret = write(get_socket(),currentSelection,strlen(currentSelection));
     test_socketOnErrors(ret);
-    //if (ret > 0) {
     infoPrint("Write to socket successful!");
-    //} 
     free(st_ga.catalog_msg);        
 }
 
@@ -72,9 +62,7 @@ void game_onAnswerClicked(int index){
     prepare_message(&qu_an, TYPE_QU_AN, 1);
     ret = write(get_socket(),&qu_an,1+sizeof(qu_an.h));
     test_socketOnErrors(ret);
-    //if (ret > 0) {
-    infoPrint("Write to socket successful!");
-    //}     
+    infoPrint("Write to socket successful!");  
 }
 
 void game_onWindowClosed(void){
