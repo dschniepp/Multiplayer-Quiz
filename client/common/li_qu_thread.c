@@ -289,7 +289,7 @@ void* listener_thread()
                                     /**No more questions left*/
                                     infoPrint("No more questions left!!!");
                                     game_setStatusIcon(STATUS_ICON_NONE);
-                                    game_setStatusText("Alle Fragen gespieltt! Warte auf andere Spieler...");
+                                    game_setStatusText("Alle Fragen gespielt! Warte auf andere Spieler...");
                                     game_unmarkAnswers();
                                     game_setQuestion("");
                                     z=0;

@@ -138,8 +138,8 @@ int main(int argc, char ** argv)
                 strncpy(lg_rq.name, argv[3], 31);
         }
         
-        prepare_message(&lg_rq, TYPE_LG_RQ, strlen(argv[3]));
-        ret = write(sock,&lg_rq,(strlen(argv[3])+sizeof(lg_rq.h)));
+        prepare_message(&lg_rq, TYPE_LG_RQ, strlen(lg_rq.name));
+        ret = write(sock,&lg_rq,(strlen(lg_rq.name)+sizeof(lg_rq.h)));
         test_socketOnErrors(ret);
         infoPrint("Write to socket successful!");     
         

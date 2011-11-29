@@ -36,9 +36,11 @@ void test_socketOnErrors(int ret){
 		errorPrint("Connection closed while trying to read/write");
                 if (get_guiruns()!=0){
                         guiShowErrorDialog("Fehler: Die Verbindung zum Server wurde getrennt!", 1);
+                        sem_wait(&semaphore_socket);
                 }else{
                         errorPrint("Fehler: Die Verbindung zum Server wurde getrennt!");
                         close_process();
+                        sem_wait(&semaphore_socket);
                 }
 	}
 	if (ret < 0) {
@@ -47,9 +49,11 @@ void test_socketOnErrors(int ret){
 		errorPrint("Cannot read from/write to socket: %s", strerror(errno));
                 if (get_guiruns()!=0){
                         guiShowErrorDialog("Fehler: Fehler beim schreib/lesezugriff auf den Socket!", 1);
+                        sem_wait(&semaphore_socket);
                 }else{
                         errorPrint("Fehler: Fehler beim schreib/lesezugriff auf den Socket!");
                         close_process();
+                        sem_wait(&semaphore_socket);
                 }
 	}
 }
