@@ -4,6 +4,7 @@
 #include "client/common/client_global.h"
 
 
+
 void preparation_onCatalogChanged(const char *newSelection){
     
     struct GB_CATALOG_CHANGE ca_ch;
@@ -47,6 +48,8 @@ void preparation_onStartClicked(const char *currentSelection){
 }
 
 void preparation_onWindowClosed(void){
+    set_closeSocketOnEndGame(1);
+    close(get_socket());
     guiShowMessageDialog("Sie haben das Spiel beendet!!!", 1);
 }
 
@@ -66,5 +69,7 @@ void game_onAnswerClicked(int index){
 }
 
 void game_onWindowClosed(void){
+    set_closeSocketOnEndGame(1);
+    close(get_socket());
     guiShowMessageDialog("Sie haben das Spiel beendet!!!", 1);
 } 

@@ -397,6 +397,7 @@ void* listener_thread()
                                                 free(er_wa.error_msg);
                                                 break;
                                     case 1: /**Fatal error message*/
+                                                close(get_socket());
                                                 if (get_guiruns()!=0){
                                                         guiShowErrorDialog(er_wa.error_msg, 1);
                                                         free(er_wa.error_msg);

@@ -13,7 +13,8 @@ extern "C" {
 #endif
 
 #include <semaphore.h>  
-
+    
+void set_closeSocketOnEndGame(int clSoOnEnGa);
 int init_semaphore(sem_t semaphore);
 void prepare_message(void * hdr, int type, int size);
 void test_socketOnErrors(int ret);
