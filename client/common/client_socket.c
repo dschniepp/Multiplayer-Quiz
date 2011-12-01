@@ -4,11 +4,23 @@
  *
  * Created on November 28, 2011, 5:05 PM
  */
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
 
 #include "client/common/client_global.h"
+#include "client/common/client_util.h"
+#include "common/util.h"
 
-//#include <stdio.h>
-//#include <stdlib.h>
+#include "client/common/client_socket.h"
+
+
 
 /**Function to connect client sockets
  * Call-By-Refferenz Übergabe --> sock

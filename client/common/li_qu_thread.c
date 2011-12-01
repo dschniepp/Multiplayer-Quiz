@@ -5,10 +5,20 @@
  * Created on November 28, 2011, 5:07 PM
  */
 
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include "client/common/li_qu_thread.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <pthread.h>
+
 #include "client/common/client_global.h"
+#include "client/common/client_util.h"
+#include "client/gui/gui_interface.h"
+#include "common/util.h"
+#include "client/main.h"
+
+#include "client/common/li_qu_thread.h"
 
 static pthread_t question_thr;
 

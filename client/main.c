@@ -9,14 +9,21 @@
 
 #define _POSIX_SOURCE 1
 
-//#include "common/socket.h"
-
-//#include "common/message.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "client/common/client_global.h"
-//#include "client/common/client_util.h"
-//#include "common/socket.h"
-//#include "client/main.h"
+#include "client/common/client_socket.h"
+#include "client/common/li_qu_thread.h"
+#include "client/common/client_util.h"
+#include "client/gui/gui_interface.h"
+#include "common/util.h"
+
+#include "client/main.h"
 
 /**Module global variables*/
 

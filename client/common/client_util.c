@@ -1,7 +1,18 @@
-//#include "client/common/client_util.h"
-//#include "client/main.h"
-//#include "common/socket.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <pthread.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "client/common/client_global.h"
+#include "client/common/client_socket.h"
+#include "client/common/li_qu_thread.h"
+#include "client/gui/gui_interface.h"
+#include "common/util.h"
+#include "client/main.h"
+
+#include "client/common/client_util.h"
 
 static int closeSocketOnEndGame=0;
 

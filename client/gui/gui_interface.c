@@ -1,9 +1,15 @@
-//#include "gui_interface.h"
-//#include "client/main.h"
-//#include "common/socket.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <string.h>
+
 #include "client/common/client_global.h"
+#include "client/common/client_util.h"
+#include "common/util.h"
+#include "client/main.h"
 
-
+#include "client/gui/gui_interface.h"
 
 void preparation_onCatalogChanged(const char *newSelection){
     

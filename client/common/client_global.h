@@ -11,30 +11,10 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <stdarg.h>
-    #include <string.h>
-    #include <errno.h>
-    #include <sys/time.h>
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #include <unistd.h>
-    #include <netdb.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <pthread.h>
-    #include <sys/un.h>
-    #include <signal.h>
+  
     #include <semaphore.h>
-    #include "common/util.h"
-    #include "client/main.h"
-    #include "client/gui/gui_interface.h"
-    #include "client/common/client_socket.h"
-    #include "client/common/client_util.h"
-    #include "client/common/li_qu_thread.h"
-   
+    #include <netinet/in.h>
+    
     #define TYPE_LG_RQ 1
     #define TYPE_LG_RQ_OK 2
     #define TYPE_CA_RQ 3
@@ -127,6 +107,30 @@ extern "C" {
 
     sem_t semaphore_main;
     sem_t semaphore_socket;
+
+/*
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <stdarg.h>
+    #include <string.h>
+    #include <errno.h>
+    #include <sys/time.h>
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+    #include <netdb.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <pthread.h>
+    #include <sys/un.h>
+    #include <signal.h>
+    #include "common/util.h"
+    #include "client/main.h"
+    #include "client/gui/gui_interface.h"
+    #include "client/common/client_socket.h"
+    #include "client/common/client_util.h"
+    #include "client/common/li_qu_thread.h"
+*/    
     
 #ifdef	__cplusplus
 }
