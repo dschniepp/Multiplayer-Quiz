@@ -33,18 +33,18 @@ void* question_thread(){
     struct GB_QUESTION_REQUEST qu_rq;
     int ret=0;
     
+    /**Wait for 4 seconds*/    
+    sleep(4);
+    
     /**Write QUESTION_REQUEST to server*/
         
     prepare_message(&qu_rq, TYPE_QU_RQ, 0);
     ret = write(get_socket(),&qu_rq,sizeof(qu_rq.h));
     test_socketOnErrors(ret);
-    infoPrint("Write to socket successful!");
-    
-    /**Wait for 4 seconds*/
-    sleep(4);
+    infoPrint("Write to socket successful!");  
     
     /**Allow listener-thread to move on*/
-    sem_post(&semaphore_socket);
+    //sem_post(&semaphore_socket);
     pthread_exit(0);
     return NULL;
 }
@@ -352,7 +352,7 @@ void* listener_thread()
                                 }
                                 
                                 /**Wait until question change thread finished*/
-                                sem_wait(&semaphore_socket);
+                                //sem_wait(&semaphore_socket);
                                 break;
                         
                         /**Case 12: GAME_OVER*/         
